@@ -248,6 +248,12 @@
                 setTimeout(() => {
                     window.location.href = 'admin.html';
                 }, 1500);
+            } catch (err) {
+                console.error(err);
+                errorMsg.innerHTML = "Beklenmeyen bir hata oluştu: " + err.message;
+                errorMsg.style.display = 'block';
+                registerBtn.innerHTML = 'Kayıt Ol ve Başla <i class="fa-solid fa-rocket"></i>';
+                registerBtn.disabled = false;
             }
         });
     </script>

@@ -19,6 +19,13 @@ function applyTheme() {
     document.title = `${CONFIG.RESTAURANT_NAME} - Sipariş Ver`;
     
     const titleEl = document.getElementById('restaurantTitle');
+    const logoEl = document.getElementById('restaurantLogo');
+    
+    if (CONFIG.LOGO_URL && logoEl) {
+        logoEl.src = CONFIG.LOGO_URL;
+        logoEl.style.display = 'block';
+    }
+    
     if (titleEl) {
         titleEl.innerText = CONFIG.RESTAURANT_NAME + " Menü";
     }

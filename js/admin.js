@@ -45,7 +45,13 @@ async function initAdmin() {
     
     // Logo kısmına restoran adını yaz
     const logoEl = document.querySelector('.logo');
+    const adminLogoImg = document.getElementById('adminLogo');
+    
     if(logoEl) logoEl.innerText = CONFIG.RESTAURANT_NAME + ' Admin';
+    if(adminLogoImg && CONFIG.LOGO_URL) {
+        adminLogoImg.src = CONFIG.LOGO_URL;
+        adminLogoImg.style.display = 'block';
+    }
 
     // 3. Çıkış Yap Butonu
     if (logoutBtn) {

@@ -19,7 +19,10 @@
 
     <header class="app-header">
         <div class="header-content">
-            <h1 id="restaurantTitle">Menü</h1>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <img id="restaurantLogo" src="" alt="Logo" style="display: none; max-height: 40px; border-radius: 8px; object-fit: contain;">
+                <h1 id="restaurantTitle">Menü</h1>
+            </div>
             <button id="orderStatusBtn" class="btn btn-primary hidden" style="padding: 0.5rem 1rem; border-radius: var(--radius-pill); font-size: 0.85rem; width: auto; background: var(--accent); color: white;">
                 <i class="fa-solid fa-bell"></i> Sipariş Durumu
             </button>

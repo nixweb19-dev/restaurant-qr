@@ -11,6 +11,7 @@ export const CONFIG = {
 
     // 2. İŞLETME BİLGİLERİ
     RESTAURANT_NAME: "NOVA Cafe & Bistro",
+    LOGO_URL: "", // İşletmenizin logo linki (Örn: "https://site.com/logo.png"). Boş bırakırsanız sadece isim yazar.
     RESTAURANT_SLUG: "nova-cafe", // QR Çıktıları ve URL için kısa isim (Boşluksuz, Türkçe karaktersiz)
     TABLE_COUNT: 10, // Restorandaki masa sayısı (Seçenekleri otomatik oluşturur)
     PHONE_NUMBER: "0555 555 55 55",

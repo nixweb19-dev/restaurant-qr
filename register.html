@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LSEMD SaaS - Restoran Kayıt Ol</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2563EB;
+            --primary-dark: #1D4ED8;
+            --surface: #ffffff;
+            --background: #f8fafc;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .auth-container {
+            background: var(--surface);
+            padding: 3rem;
+            border-radius: var(--radius-lg);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 480px;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            text-align: left;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+        }
+
+        .auth-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .auth-links {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .auth-links a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .auth-links a:hover {
+            text-decoration: underline;
+        }
+
+        .error-msg {
+            color: #ef4444;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .success-msg {
+            color: #10b981;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="auth-container">
+        <div class="logo">LSEMD SaaS</div>
+        <p class="subtitle">Yeni Restoran Hesabı Oluşturun</p>
+
+        <div id="errorMsg" class="error-msg"></div>
+        <div id="successMsg" class="success-msg">Kayıt başarılı! Yönlendiriliyorsunuz...</div>
+
+        <form id="registerForm">
+            <div class="form-group">
+                <label for="restaurantName">İşletme / Restoran Adı</label>
+                <input type="text" id="restaurantName" required placeholder="Örn: LSEMD Döner">
+            </div>
+            <div class="form-group">
+                <label for="email">E-posta Adresi</label>
+                <input type="email" id="email" required placeholder="admin@restoran.com">
+            </div>
+            <div class="form-group">
+                <label for="password">Şifre (En az 6 karakter)</label>
+                <input type="password" id="password" required placeholder="••••••••" minlength="6">
+            </div>
+            <button type="submit" id="registerBtn" class="auth-btn">Kayıt Ol ve Başla <i class="fa-solid fa-rocket"></i></button>
+        </form>
+
+        <div class="auth-links">
+            Zaten hesabınız var mı? <a href="login.html">Giriş Yap</a>
+        </div>
+    </div>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module">
+        import { supabase } from './js/supabaseClient.js';
+
+        const registerForm = document.getElementById('registerForm');
+        const errorMsg = document.getElementById('errorMsg');
+        const successMsg = document.getElementById('successMsg');
+        const registerBtn = document.getElementById('registerBtn');
+
+        // Basit slug (URL dostu metin) oluşturucu
+        function createSlug(text) {
+            return text.toString().toLowerCase()
+                .replace(/\s+/g, '-')           // Boşlukları - yap
+                .replace(/[^\w\-]+/g, '')       // Özel karakterleri sil
+                .replace(/\-\-+/g, '-')         // Çoklu -'leri tek - yap
+                .replace(/^-+/, '')             // Baştaki -'yi sil
+                .replace(/-+$/, '');            // Sondaki -'yi sil
+        }
+
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const restaurantName = document.getElementById('restaurantName').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            registerBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> İşlemler yapılıyor...';
+            registerBtn.disabled = true;
+            errorMsg.style.display = 'none';
+
+            // 1. Kullanıcıyı oluştur
+            const { data: authData, error: authError } = await supabase.auth.signUp({
+                email: email,
+                password: password,
+            });
+
+            if (authError) {
+                errorMsg.innerText = "Kayıt hatası: " + authError.message;
+                errorMsg.style.display = 'block';
+                registerBtn.innerHTML = 'Kayıt Ol ve Başla <i class="fa-solid fa-rocket"></i>';
+                registerBtn.disabled = false;
+                return;
+            }
+
+            // Eğer auto-confirm kapalıysa kullanıcıya e-posta doğrulaması gidebilir. 
+            // Demo/MVP aşamasında genelde auto-confirm açık bırakılır.
+            const userId = authData.user?.id;
+            
+            if (userId) {
+                // 2. Workspace (İşletme) oluştur
+                const slug = createSlug(restaurantName) + '-' + Math.floor(Math.random() * 1000);
+                
+                const { error: workspaceError } = await supabase
+                    .from('workspaces')
+                    .insert([
+                        { owner_id: userId, name: restaurantName, slug: slug }
+                    ]);
+                
+                if (workspaceError) {
+                    // RLS kuralları yüzünden veya tablo eksikliğinden hata verebilir. (Kullanıcı Supabase SQL'i çalıştırmamış olabilir)
+                    console.error(workspaceError);
+                    errorMsg.innerHTML = "İşletme profili oluşturulamadı. Lütfen Supabase'de SQL kurulumunu (Faz 2) yaptığınızdan emin olun.";
+                    errorMsg.style.display = 'block';
+                    registerBtn.innerHTML = 'Kayıt Ol ve Başla <i class="fa-solid fa-rocket"></i>';
+                    registerBtn.disabled = false;
+                    return;
+                }
+
+                // 3. Başarılı
+                successMsg.style.display = 'block';
+                setTimeout(() => {
+                    window.location.href = 'admin.html';
+                }, 1500);
+            }
+        });
+    </script>
+</body>
+</html>

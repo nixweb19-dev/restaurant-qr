@@ -27,11 +27,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function initAdmin() {
-    // 1. Oturum Kontrolü
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-        window.location.href = 'login.html';
-        return;
+    // 1. Şifre Kontrolü (Supabase Auth yerine basit frontend koruması)
+    const isAuthenticated = sessionStorage.getItem('lsemd_admin_auth') === 'true';
+    
+    if (!isAuthenticated) {
+        const password = prompt("Admin Paneli Şifresini Giriniz:");
+        if (password !== CONFIG.ADMIN_PASSWORD) {
+            alert("Hatalı şifre!");
+            document.body.innerHTML = '<div style="text-align:center; padding:50px;"><h1>Erişim Reddedildi</h1><p>Şifre yanlış.</p><button onclick="location.reload()" style="padding:10px 20px; cursor:pointer;">Tekrar Dene</button></div>';
+            return;
+        } else {
+            sessionStorage.setItem('lsemd_admin_auth', 'true');
+        }
     }
 
     // 2. Kullanıcının İşletmesini (Workspace) Bul (İPTAL - Master Template'de gerek yok)
@@ -42,10 +49,10 @@ async function initAdmin() {
 
     // 3. Çıkış Yap Butonu
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', async (e) => {
+        logoutBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            await supabase.auth.signOut();
-            window.location.href = 'login.html';
+            sessionStorage.removeItem('lsemd_admin_auth');
+            location.reload();
         });
     }
 

@@ -16,7 +16,10 @@ export const CONFIG = {
     WHATSAPP_NUMBER: "905555555555",
     ADDRESS: "Kadıköy, İstanbul",
 
-    // 3. TEMA VE GÖRÜNÜM AYARLARI
+    // 3. ADMIN PANELİ ŞİFRESİ
+    ADMIN_PASSWORD: "123", // admin.html sayfasına girişte sorulacak şifre
+
+    // 4. TEMA VE GÖRÜNÜM AYARLARI
     THEME: {
         PRIMARY_COLOR: "#ff4757", // Ana Tema Rengi (Örn: #ff4757)
         ACCENT_COLOR: "#ffa502",  // Vurgu Rengi
@@ -26,12 +29,12 @@ export const CONFIG = {
         TEXT_MUTED: "#747d8c",    // Soluk Metin Rengi
     },
 
-    // 4. METİN VE AÇIKLAMALAR
+    // 5. METİN VE AÇIKLAMALAR
     HERO_TITLE: "Hoş Geldiniz",
     HERO_SUBTITLE: "En özel lezzetleri sizin için özenle hazırlıyoruz. Hemen siparişinizi oluşturun.",
     FOOTER_TEXT: "© 2026 LSEMD Yazılım - Tüm Hakları Saklıdır.",
     
-    // 5. ÖZELLİK AÇ/KAPA (FEATURE FLAGS)
+    // 6. ÖZELLİK AÇ/KAPA (FEATURE FLAGS)
     ENABLE_WAITER_CALL: true,     // Garson Çağırma Butonu aktif mi?
     ENABLE_ORDER_NOTES: true,     // Sipariş notu aktif mi?
 };

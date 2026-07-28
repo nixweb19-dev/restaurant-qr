@@ -356,8 +356,18 @@ function playNotificationSound() {
 
 function playWaiterSound() {
     try {
+        waiterSound.loop = true; // Kapatılana kadar çalsın
         waiterSound.currentTime = 0;
-        waiterSound.play().catch(e => console.log('Otomatik ses çalma tarayıcı tarafından engellendi.', e));
+        waiterSound.play().catch(e => console.log('Otomatik ses çalma engellendi.', e));
+    } catch(err) {
+        console.error(err);
+    }
+}
+
+function stopWaiterSound() {
+    try {
+        waiterSound.pause();
+        waiterSound.currentTime = 0;
     } catch(err) {
         console.error(err);
     }
@@ -383,7 +393,7 @@ async function fetchWaiterCalls() {
 function renderWaiterCalls(calls) {
     if (!waiterCallsContainer) return;
     
-    let html = '<button onclick="document.getElementById(\'waiterSound\').play()" style="padding: 5px; background: var(--surface); border: 1px solid var(--border); cursor: pointer; border-radius: 5px; margin-bottom: 5px;">🔔 Sesi Test Et</button>';
+    let html = '';
     calls.forEach(call => {
         const safeTable = escapeHTML(call.table_no);
         html += `
@@ -400,6 +410,8 @@ function renderWaiterCalls(calls) {
 }
 
 window.resolveWaiterCall = async (callId) => {
+    stopWaiterSound();
+    
     const { error } = await supabase
         .from('waiter_calls')
         .update({ status: 'resolved' })

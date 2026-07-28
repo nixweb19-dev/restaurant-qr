@@ -1,35 +1,10 @@
 import { supabase } from './supabaseClient.js';
 
-// --- MOCK CAFE MENÜ VERİLERİ ---
-const MENU_DATA = [
-    {
-        category: 'Sıcak Kahveler',
-        products: [
-            { id: 'c1', name: 'Caramel Macchiato', price: 95.00, desc: 'Taze espresso, buharda ısıtılmış süt ve karamel şurubu.' },
-            { id: 'c2', name: 'Caffè Mocha', price: 105.00, desc: 'Espresso, mocha sosu, sıcak süt ve çırpılmış krema.' },
-            { id: 'c3', name: 'Flat White', price: 85.00, desc: 'İki shot ristretto ve ince köpüklü sıcak süt.' },
-            { id: 'c4', name: 'Americano', price: 70.00, desc: 'Sıcak su ile inceltilmiş yoğun espresso.' }
-        ]
-    },
-    {
-        category: 'Soğuk İçecekler',
-        products: [
-            { id: 'i1', name: 'Iced White Mocha', price: 115.00, desc: 'Beyaz çikolata sosu, espresso, soğuk süt ve buz.' },
-            { id: 'i2', name: 'Cold Brew', price: 90.00, desc: '12 saat soğuk suda demlenmiş yoğun kahve.' },
-            { id: 'i3', name: 'Çilekli Frappuccino', price: 125.00, desc: 'Çilek sosu, süt, buz ve çırpılmış krema.' },
-            { id: 'i4', name: 'Cool Lime', price: 95.00, desc: 'Ferahlatıcı limon ve nane özü, buzlu.' }
-        ]
-    },
-    {
-        category: 'Tatlılar & Fırın',
-        products: [
-            { id: 'd1', name: 'San Sebastian Cheesecake', price: 150.00, desc: 'Orijinal İspanyol tarifi, üzeri yanık, içi akışkan peynir keki.' },
-            { id: 'd2', name: 'Çikolatalı Kruvasan', price: 85.00, desc: 'Taze fırınlanmış, içi Belçika çikolatası dolgulu.' },
-            { id: 'd3', name: 'Tiramisu', price: 130.00, desc: 'Espresso ile ıslatılmış kedi dili ve mascarpone kreması.' },
-            { id: 'd4', name: 'Havuçlu Cevizli Kek', price: 90.00, desc: 'Tarçın aromalı, cevizli ve havuçlu ev keki.' }
-        ]
-    }
-];
+// --- SİSTEM STATE ---
+const urlParams = new URLSearchParams(window.location.search);
+const workspaceSlug = urlParams.get('r');
+let currentWorkspace = null;
+let MENU_DATA = [];
 
 // --- SEPET STATE ---
 let cart = [];
@@ -155,8 +130,31 @@ function raf(time) {
 requestAnimationFrame(raf);
 
 // --- İLK YÜKLEME ---
-document.addEventListener('DOMContentLoaded', () => {
-    renderMenu();
+document.addEventListener('DOMContentLoaded', async () => {
+    if (!workspaceSlug) {
+        document.body.innerHTML = '<div style="text-align:center; padding: 40px; font-family: Outfit, sans-serif;"><h1>Geçersiz Karekod!</h1><p style="color:#64748b; margin-top:10px;">Lütfen masanızdaki geçerli restoran QR kodunu okutun.</p><p style="margin-top:20px; font-size:0.9rem;">Örnek: ?r=restoran-adi</p></div>';
+        return;
+    }
+
+    // 1. Restoranı (Workspace) Bul
+    const { data: ws, error: wsErr } = await supabase
+        .from('workspaces')
+        .select('*')
+        .eq('slug', workspaceSlug)
+        .single();
+    
+    if (wsErr || !ws) {
+        document.body.innerHTML = '<div style="text-align:center; padding: 40px; font-family: Outfit, sans-serif;"><h1>Restoran Bulunamadı!</h1><p style="color:#64748b; margin-top:10px;">Bu restoran sistemde kayıtlı değil.</p></div>';
+        return;
+    }
+
+    currentWorkspace = ws;
+    document.title = `${ws.name} | Sipariş Menüsü`;
+    document.querySelector('.header-content h1').innerText = ws.name;
+
+    // 2. Menüyü Çek ve Oluştur
+    await fetchAndBuildMenu();
+
     loadingIndicator.classList.add('hidden');
     menuContainer.classList.remove('hidden');
 
@@ -235,10 +233,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // --- FONKSİYONLAR ---
 
+async function fetchAndBuildMenu() {
+    const { data: categories } = await supabase.from('categories').select('*').eq('workspace_id', currentWorkspace.id).order('created_at', { ascending: true });
+    const { data: products } = await supabase.from('products').select('*').eq('workspace_id', currentWorkspace.id).order('created_at', { ascending: true });
+    
+    MENU_DATA = [];
+    if (categories && products) {
+        categories.forEach(cat => {
+            const catProds = products.filter(p => p.category_id === cat.id).map(p => ({
+                id: p.id,
+                name: p.name,
+                price: parseFloat(p.price),
+                desc: p.description || ''
+            }));
+            if (catProds.length > 0) {
+                MENU_DATA.push({ category: cat.name, products: catProds });
+            }
+        });
+    }
+    
+    if (MENU_DATA.length === 0) {
+        menuContainer.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--text-muted);">Restoran henüz menü eklememiş.</div>';
+    } else {
+        renderMenu();
+    }
+}
+
 async function fetchTables() {
+    if (!currentWorkspace) return;
     const { data: tables, error } = await supabase
-        .from('quick_tables')
+        .from('tables')
         .select('*')
+        .eq('workspace_id', currentWorkspace.id)
         .order('table_number', { ascending: true });
 
     if (error) {
@@ -293,9 +319,15 @@ async function fetchTables() {
 }
 
 function setupTableSubscription() {
+    if(!currentWorkspace) return;
     supabase
-        .channel('customer-tables-channel')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'quick_tables' }, payload => {
+        .channel('public:tables:ws=' + currentWorkspace.id)
+        .on('postgres_changes', { 
+            event: '*', 
+            schema: 'public', 
+            table: 'tables',
+            filter: `workspace_id=eq.${currentWorkspace.id}`
+        }, payload => {
             fetchTables();
         })
         .subscribe();
@@ -557,10 +589,11 @@ async function submitOrder() {
     const finalNotes = notes ? `${notes} | ${deviceStr}` : deviceStr;
 
     const { data, error } = await supabase
-        .from('quick_orders')
+        .from('orders')
         .insert([
             {
-                table_no: "Masa " + selectedTable,
+                workspace_id: currentWorkspace.id,
+                table_number: "Masa " + selectedTable,
                 items: cart, // Cart objesi artık özel notları da barındırıyor (item.note)
                 notes: finalNotes, // Genel sipariş notu + cihaz bilgisi
                 total_price: totalPrice,
@@ -584,8 +617,9 @@ async function submitOrder() {
         }
         // Masayı dolu olarak işaretle
         const { error: updateError } = await supabase
-            .from('quick_tables')
+            .from('tables')
             .update({ status: 'occupied' })
+            .eq('workspace_id', currentWorkspace.id)
             .eq('table_number', selectedTable);
             
         if (updateError) {
@@ -621,9 +655,10 @@ async function checkOrderStatus() {
     orderStatusModal.classList.remove('hidden');
 
     const { data, error } = await supabase
-        .from('quick_orders')
+        .from('orders')
         .select('status')
         .eq('id', currentOrderId)
+        .eq('workspace_id', currentWorkspace.id)
         .single();
 
     if (error || !data) {
@@ -694,7 +729,11 @@ async function sendWaiterCall(tNo) {
 
     const { error } = await supabase
         .from('waiter_calls')
-        .insert([{ table_no: "Masa " + tNo, status: 'pending' }]);
+        .insert([{ 
+            workspace_id: currentWorkspace.id,
+            table_number: "Masa " + tNo, 
+            status: 'pending' 
+        }]);
 
     if (error) {
         console.error(error);
@@ -717,11 +756,11 @@ function setupOrderStatusSubscription() {
     if (orderStatusChannel) return; // Zaten dinliyorsak tekrar başlatma
 
     orderStatusChannel = supabase
-        .channel('public:quick_orders:status')
+        .channel('public:orders:status:' + currentOrderId)
         .on('postgres_changes', { 
             event: 'UPDATE', 
             schema: 'public', 
-            table: 'quick_orders',
+            table: 'orders',
             filter: `id=eq.${currentOrderId}`
         }, payload => {
             console.log('Sipariş durumu güncellendi:', payload.new.status);

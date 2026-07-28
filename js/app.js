@@ -15,6 +15,13 @@ function applyTheme() {
     root.style.setProperty('--surface', CONFIG.THEME.SURFACE_COLOR);
     root.style.setProperty('--text-main', CONFIG.THEME.TEXT_MAIN);
     root.style.setProperty('--text-muted', CONFIG.THEME.TEXT_MUTED);
+    
+    document.title = `${CONFIG.RESTAURANT_NAME} - Sipariş Ver`;
+    
+    const titleEl = document.getElementById('restaurantTitle');
+    if (titleEl) {
+        titleEl.innerText = CONFIG.RESTAURANT_NAME + " Menü";
+    }
 }
 applyTheme();
 
@@ -83,10 +90,9 @@ function playCustomerSound() {
     try {
         if(customerNotificationSound) {
             customerNotificationSound.currentTime = 0;
-            customerNotificationSound.play().catch(e => console.log('Otomatik ses çalma engellendi.', e));
+            customerNotificationSound.play().catch(e => {});
         }
     } catch(err) {
-        console.error(err);
     }
 }
 
@@ -755,7 +761,6 @@ function setupOrderStatusSubscription() {
             table: 'orders',
             filter: `id=eq.${currentOrderId}`
         }, payload => {
-            console.log('Sipariş durumu güncellendi:', payload.new.status);
             
             // Eğer modal açıksa içini güncelle
             if (!orderStatusModal.classList.contains('hidden')) {

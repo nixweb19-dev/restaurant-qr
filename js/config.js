@@ -1,5 +1,5 @@
 // ==========================================
-// LSEMD SAAS - MASTER TEMPLATE CONFIG
+// MASTER TEMPLATE CONFIG
 // ==========================================
 // Her yeni restoran (müşteri) kurulumunda SADECE bu dosyayı düzenleyin.
 // Diğer hiçbir koda dokunmanıza gerek yoktur.

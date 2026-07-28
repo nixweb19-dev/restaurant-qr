@@ -41,7 +41,7 @@ async function initAdmin() {
         }
     }
 
-    // 2. Kullanıcının İşletmesini (Workspace) Bul (İPTAL - Master Template'de gerek yok)
+
     
     // Logo kısmına restoran adını yaz
     const logoEl = document.querySelector('.logo');
@@ -62,10 +62,8 @@ async function initAdmin() {
     setupRealtimeSubscription();
 }
 
-// Siparişleri Supabase'den Çek (Sadece bu işletmeye ait olanları)
+// Siparişleri Supabase'den Çek
 async function fetchOrders() {
-    if (!currentWorkspaceId) return;
-
     const { data: orders, error } = await supabase
         .from('orders')
         .select('*')
@@ -83,7 +81,7 @@ async function fetchOrders() {
 function setupRealtimeSubscription() {
     // Siparişler İçin
     supabase
-        .channel('workspace_orders')
+        .channel('public:orders')
         .on('postgres_changes', { 
             event: '*', 
             schema: 'public', 
@@ -98,7 +96,7 @@ function setupRealtimeSubscription() {
 
     // Garson Çağrıları İçin
     supabase
-        .channel('workspace_waiter_calls')
+        .channel('public:waiter_calls')
         .on('postgres_changes', { 
             event: '*', 
             schema: 'public', 
@@ -282,7 +280,7 @@ function playNotificationSound() {
     try {
         if(notificationSound) {
             notificationSound.currentTime = 0;
-            notificationSound.play().catch(e => console.log(e));
+            notificationSound.play().catch(e => {});
         }
     } catch(err) {}
 }
@@ -292,7 +290,7 @@ function playWaiterSound() {
         if(waiterSound) {
             waiterSound.loop = true;
             waiterSound.currentTime = 0;
-            waiterSound.play().catch(e => console.log(e));
+            waiterSound.play().catch(e => {});
         }
     } catch(err) {}
 }
@@ -308,12 +306,9 @@ function stopWaiterSound() {
 
 // --- GARSON ÇAĞRILARI ---
 async function fetchWaiterCalls() {
-    if (!currentWorkspaceId) return;
-
     const { data: calls, error } = await supabase
         .from('waiter_calls')
         .select('*')
-        .eq('workspace_id', currentWorkspaceId)
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
@@ -383,8 +378,8 @@ if (generateQrBtn) {
         setTimeout(() => {
             let html = '';
             const baseUrl = window.location.origin; // e.g. https://restaurant-qr-yeni.vercel.app
-            const workspaceSlug = CONFIG.RESTAURANT_SLUG;
-            const workspaceName = CONFIG.RESTAURANT_NAME;
+            const restaurantSlug = CONFIG.RESTAURANT_SLUG;
+            const restaurantName = CONFIG.RESTAURANT_NAME;
 
             for (let i = 1; i <= count; i++) {
                 // Müşteri ekranı için URL (Artık sadece ?m=X parametresi eklendi)
@@ -396,7 +391,7 @@ if (generateQrBtn) {
 
                 html += `
                     <div class="qr-card">
-                        <h3>${workspaceName}</h3>
+                        <h3>${restaurantName}</h3>
                         <img src="${qrImageUrl}" alt="Masa ${i} QR" loading="lazy">
                         <p>Masa ${i}</p>
                     </div>

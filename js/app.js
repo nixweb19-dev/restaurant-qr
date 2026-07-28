@@ -680,8 +680,8 @@ function updateOrderStatusUI(status) {
     } else if (status === 'completed') {
         orderStatusIcon.innerHTML = '<i class="fa-solid fa-check-double"></i>';
         orderStatusIcon.style.color = '#4CAF50'; // Yeşil (Tamamlandı)
-        orderStatusTitle.innerText = 'Siparişiniz Tamamlandı';
-        orderStatusDesc.innerText = 'Siparişiniz hazır, afiyet olsun!';
+        orderStatusTitle.innerText = 'Siparişiniz Hazır!';
+        orderStatusDesc.innerText = 'Siparişiniz hazır, birazdan masanıza servis edilecektir. Afiyet olsun!';
         
         // Teslim edildiyse, bir süre sonra butonu gizleyebiliriz
         setTimeout(() => {
@@ -769,7 +769,7 @@ function setupOrderStatusSubscription() {
             } else if (payload.new.status === 'completed') {
                 playCustomerSound();
                 if (orderStatusModal.classList.contains('hidden')) {
-                    showCustomAlert("Siparişiniz tamamlandı ve teslim ediliyor. Afiyet olsun!", "success");
+                    showCustomAlert("Siparişiniz hazır, birazdan servis edilecektir!", "success");
                 }
                 updateOrderStatusUI(payload.new.status); // Cleanups in UI
             }

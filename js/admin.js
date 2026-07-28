@@ -192,7 +192,7 @@ function createOrderCard(order) {
     if (order.status === 'pending') {
         statusBtns = `<button onclick="updateOrderStatus('${order.id}', 'preparing')" class="btn btn-warning btn-sm">Hazırlanıyor</button>`;
     } else if (order.status === 'preparing') {
-        statusBtns = `<button onclick="updateOrderStatus('${order.id}', 'completed')" class="btn btn-success btn-sm">Teslim Edildi</button>`;
+        statusBtns = `<button onclick="updateOrderStatus('${order.id}', 'completed')" class="btn btn-success btn-sm"><i class="fa-solid fa-check"></i> Hazır / Teslim Et</button>`;
     } else if (order.status === 'completed') {
         statusBtns = `<button onclick="deleteOrder('${order.id}')" class="btn btn-danger btn-sm"><i class="fa-solid fa-trash"></i> Sil</button>`;
     }

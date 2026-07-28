@@ -11,7 +11,6 @@ export const CONFIG = {
 
     // 2. İŞLETME BİLGİLERİ
     RESTAURANT_NAME: "NİXWEB", // Bu metin sayfada görünen ana isimdir
-    LOGO_URL: "", // İşletmenizin logo resminin linki (Örn: "https://site.com/logo.png"). Eğer görsel yoksa boş bırakın.
     RESTAURANT_SLUG: "nova-cafe", // QR Çıktıları ve URL için kısa isim (Boşluksuz, Türkçe karaktersiz)
     TABLE_COUNT: 10, // Restorandaki masa sayısı (Seçenekleri otomatik oluşturur)
     PHONE_NUMBER: "0555 555 55 55",

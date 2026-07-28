@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sipariş Ver | LSEMD</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+    <!-- Müşteri Bildirim Sesi -->
+    <audio id="customerNotificationSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+
+    <header class="app-header">
+        <div class="header-content">
+            <h1>LSEMD Menü</h1>
+            <button id="orderStatusBtn" class="btn btn-primary hidden" style="padding: 0.5rem 1rem; border-radius: var(--radius-pill); font-size: 0.85rem; width: auto; background: var(--accent); color: white;">
+                <i class="fa-solid fa-bell"></i> Sipariş Durumu
+            </button>
+        </div>
+    </header>
+
+    <div class="hero-banner">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <h2>Hoş Geldiniz</h2>
+            <p>En özel lezzetleri sizin için özenle hazırlıyoruz. Hemen siparişinizi oluşturun.</p>
+        </div>
+    </div>
+
+    <main class="app-main">
+        <div id="loadingIndicator" class="loading-container">
+            <i class="fa-solid fa-spinner fa-spin"></i> Menü Yükleniyor...
+        </div>
+        
+        <div id="menuContainer" class="menu-container hidden">
+            <!-- Kategoriler ve Ürünler JS ile buraya gelecek -->
+        </div>
+    </main>
+
+    <!-- Floating Cart Button -->
+    <button id="cartButton" class="cart-button hidden">
+        <div class="cart-icon-wrapper">
+            <i class="fa-solid fa-basket-shopping"></i>
+            <span class="badge" id="cartItemCount">0</span>
+        </div>
+        <span>Sepete Git</span>
+        <span id="cartTotal">0.00 TL</span>
+    </button>
+
+    <!-- Floating Waiter Button -->
+    <button id="callWaiterBtn" class="waiter-button">
+        <i class="fa-solid fa-bell-concierge"></i>
+        <span>Garson Çağır</span>
+    </button>
+
+    <!-- Cart Modal -->
+    <div id="cartModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Sepetim</h2>
+                <button id="closeCartBtn" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="cartItemsContainer" class="cart-items">
+                    <!-- Sepet öğeleri buraya gelecek -->
+                </div>
+                
+                <div class="order-notes-section">
+                    <label for="orderNotes">Sipariş Notu (İsteğe Bağlı):</label>
+                    <textarea id="orderNotes" placeholder="Örn: Acısız olsun, bol soslu olsun..."></textarea>
+                </div>
+
+                <div class="cart-summary">
+                    <div class="summary-row total">
+                        <span>Toplam:</span>
+                        <span id="modalCartTotal">0.00 TL</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="cart-table-selector" style="margin-bottom: 1.5rem;">
+                    <label for="tableNumber" style="display:block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-main);">Siparişin Gideceği Masa:</label>
+                    <select id="tableNumber" class="modern-select">
+                        <option value="" disabled selected>Lütfen Masanızı Seçiniz</option>
+                        <!-- Masalar JavaScript ile dinamik olarak yüklenecek -->
+                    </select>
+                </div>
+                <button id="confirmOrderBtn" class="btn btn-primary">
+                    <span>Siparişi Onayla</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Detail Modal -->
+    <div id="productModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Ürün Detayı</h2>
+                <button id="closeProductBtn" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="productImagePlaceholder">
+                    <i class="fa-solid fa-mug-hot"></i>
+                </div>
+                <h3 id="productModalName">Ürün Adı</h3>
+                <p id="productModalDesc">Ürün Açıklaması</p>
+                <div class="product-price" id="productModalPrice" style="font-size:1.5rem;">0.00 TL</div>
+
+                <div class="qty-selector">
+                    <button class="qty-btn" id="qtyMinusBtn"><i class="fa-solid fa-minus"></i></button>
+                    <span id="productModalQty">1</span>
+                    <button class="qty-btn" id="qtyPlusBtn"><i class="fa-solid fa-plus"></i></button>
+                </div>
+                
+                <div class="order-notes-section" style="margin-top: 0;">
+                    <label for="itemNotes">Özel İstekleriniz:</label>
+                    <textarea id="itemNotes" placeholder="Örn: Ekstra shot, sıcak olsun, şeker olmasın..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="addToCartConfirmBtn" class="btn btn-primary">
+                    <span id="addToCartBtnText">Sepete Ekle</span>
+                    <i class="fa-solid fa-basket-shopping"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Alert Modal -->
+    <div id="alertModal" class="modal hidden" style="z-index: 2000;">
+        <div class="modal-content" style="max-width: 350px; text-align: center; border-radius: var(--radius-lg); transform: scale(0.9); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1);">
+            <div id="alertModalIcon" style="font-size: 3.5rem; margin-bottom: 1rem;">
+                <!-- Icon will be injected here -->
+            </div>
+            <h2 id="alertModalTitle" style="margin-bottom: 0.5rem; font-size: 1.5rem;">Uyarı</h2>
+            <p id="alertModalMessage" style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 1.05rem;"></p>
+            <button id="alertModalCloseBtn" class="btn btn-primary" style="width: 100%;">Tamam</button>
+        </div>
+    </div>
+
+    <!-- Table Selection Modal -->
+    <div id="tableSelectModal" class="modal hidden" style="z-index: 1500;">
+        <div class="modal-content" style="max-width: 400px; border-radius: var(--radius-lg);">
+            <div class="modal-header">
+                <h2>Masanızı Seçin</h2>
+                <button id="closeTableSelectBtn" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" style="text-align: center;">
+                <p style="color: var(--text-muted); margin-bottom: 1rem;">Garson çağırabilmemiz için lütfen bulunduğunuz masayı seçin:</p>
+                <div id="tableSelectGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                    <!-- Masa butonları JS ile buraya eklenecek -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Status Modal -->
+    <div id="orderStatusModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>Sipariş Durumu</h2>
+                <button id="closeOrderStatusBtn" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" style="text-align: center; padding: 3rem 1.5rem;">
+                <div id="orderStatusIcon" style="font-size: 4rem; color: var(--accent); margin-bottom: 1.5rem;">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+                <h3 id="orderStatusTitle" style="font-size: 1.5rem; margin-bottom: 1rem; font-weight: 700; color: var(--text-main);">Siparişiniz Beklemede</h3>
+                <p id="orderStatusDesc" style="color: var(--text-muted); font-size: 1rem; line-height: 1.5;">Siparişiniz mutfağa iletildi, onaylanması bekleniyor.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lenis Smooth Scroll -->
+    <script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+    
+    <!-- Supabase CDN (cPanel için zorunlu) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Scripts -->
+    <script type="module" src="./js/app.js"></script>
+</body>
+</html>

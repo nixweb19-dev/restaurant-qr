@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yönetim Paneli | LSEMD</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="./css/style.css">
+    <link rel="stylesheet" href="./css/admin.css">
+</head>
+<body class="admin-body">
+    <!-- Audio element for order notification sound -->
+    <audio id="notificationSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+    <audio id="waiterSound" src="https://assets.mixkit.co/active_storage/sfx/1003/1003-preview.mp3" preload="auto"></audio>
+
+    <!-- Garson Çağrıları Paneli -->
+    <div id="waiterCallsContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;">
+        <button onclick="document.getElementById('waiterSound').play()" style="padding: 5px; background: var(--surface); border: 1px solid var(--border); cursor: pointer; border-radius: 5px;">🔔 Sesi Test Et</button>
+        <!-- Çağrılar buraya düşecek -->
+    </div>
+
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <div class="brand">
+                <h2>LSEMD Admin</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="active" id="tab-orders"><i class="fa-solid fa-bell-concierge"></i> Siparişler</a>
+                <a href="#" id="tab-tables"><i class="fa-solid fa-chair"></i> Masa Kontrolü</a>
+                <a href="#" id="tab-history"><i class="fa-solid fa-clock-rotate-left"></i> Sipariş Geçmişi</a>
+                <a href="/"><i class="fa-solid fa-store"></i> Menüyü Görüntüle</a>
+            </nav>
+        </aside>
+
+        <main class="admin-main">
+            <header class="admin-header">
+                <div class="header-title">
+                    <h1 id="page-title">Canlı Sipariş Takibi</h1>
+                    <div class="status-indicator">
+                        <span class="pulse-dot"></span> Veritabanına Bağlı
+                    </div>
+                </div>
+            </header>
+
+            <div class="orders-board" id="view-orders">
+                <!-- Bekleyen Siparişler -->
+                <div class="order-column">
+                    <div class="column-header warning">
+                        <h3><i class="fa-solid fa-clock"></i> Bekleyenler</h3>
+                        <span class="count" id="pendingCount">0</span>
+                    </div>
+                    <div class="column-content" id="pendingOrders">
+                        <!-- Bekleyen sipariş kartları buraya -->
+                    </div>
+                </div>
+
+                <!-- Hazırlanan Siparişler -->
+                <div class="order-column">
+                    <div class="column-header info">
+                        <h3><i class="fa-solid fa-fire-burner"></i> Hazırlanıyor</h3>
+                        <span class="count" id="preparingCount">0</span>
+                    </div>
+                    <div class="column-content" id="preparingOrders">
+                        <!-- Hazırlanan sipariş kartları buraya -->
+                    </div>
+                </div>
+
+                <!-- Teslim Edilen Siparişler -->
+                <div class="order-column">
+                    <div class="column-header success">
+                        <h3><i class="fa-solid fa-check-double"></i> Tamamlananlar</h3>
+                        <span class="count" id="completedCount">0</span>
+                    </div>
+                    <div class="column-content" id="completedOrders">
+                        <!-- Tamamlanan sipariş kartları buraya -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Masa Kontrolü Görünümü -->
+            <div class="tables-board hidden" id="view-tables">
+                <div class="tables-grid" id="tablesContainer">
+                    <!-- Masa kartları JS ile buraya gelecek -->
+                </div>
+            </div>
+
+            <!-- Sipariş Geçmişi Görünümü -->
+            <div class="history-board hidden" id="view-history">
+                <div class="history-container">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>Tarih & Saat</th>
+                                <th>Masa</th>
+                                <th>Sipariş Detayı</th>
+                                <th>Notlar</th>
+                                <th>Tutar</th>
+                                <th>Durum</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            <!-- Geçmiş siparişler JS ile buraya gelecek -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Özel Onay Modalı -->
+    <div id="confirmModal" class="modal hidden" style="z-index: 2000;">
+        <div class="modal-content" style="max-width: 350px; border-radius: var(--radius-lg); transform: scale(0.9); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1);">
+            <div class="modal-body" style="text-align: center; padding: 2.5rem 1.5rem 2rem;">
+                <div style="font-size: 3.5rem; margin-bottom: 1rem; color: #f44336;"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <h3 style="margin-bottom: 0.8rem; font-size: 1.4rem; font-weight: 700;">Emin misiniz?</h3>
+                <p id="confirmModalMessage" style="color: var(--text-muted); margin-bottom: 1.8rem; font-size: 1rem; line-height: 1.5;">Bu işlemi yapmak istediğinize emin misiniz?</p>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button id="confirmBtnCancel" class="btn btn-secondary" style="padding: 0.8rem 1.5rem;">İptal</button>
+                    <button id="confirmBtnYes" class="btn btn-danger" style="padding: 0.8rem 1.5rem;">Evet, Sil</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supabase CDN (cPanel için zorunlu) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Scripts -->
+    <script type="module" src="./js/admin.js"></script>
+</body>
+</html>

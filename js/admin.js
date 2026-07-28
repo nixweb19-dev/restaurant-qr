@@ -535,3 +535,60 @@ window.deleteProduct = async (id) => {
         fetchMenuData();
     }
 };
+
+// ==========================================
+// KAREKOD (QR) ÜRETİMİ
+// ==========================================
+const generateQrBtn = document.getElementById('generateQrBtn');
+const tableCountInput = document.getElementById('tableCountInput');
+const qrGridContainer = document.getElementById('qrGridContainer');
+const printQrBtn = document.getElementById('printQrBtn');
+
+if (generateQrBtn) {
+    generateQrBtn.addEventListener('click', () => {
+        if (!currentWorkspace || !currentWorkspace.slug) {
+            alert("İşletme bilgileri yüklenemedi.");
+            return;
+        }
+
+        const count = parseInt(tableCountInput.value);
+        if (isNaN(count) || count < 1 || count > 200) {
+            alert("Lütfen 1 ile 200 arasında geçerli bir masa sayısı girin.");
+            return;
+        }
+
+        generateQrBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Üretiliyor...';
+        generateQrBtn.disabled = true;
+
+        setTimeout(() => {
+            let html = '';
+            const baseUrl = window.location.origin; // e.g. https://restaurant-qr-yeni.vercel.app
+            const workspaceSlug = currentWorkspace.slug;
+            const workspaceName = currentWorkspace.name;
+
+            for (let i = 1; i <= count; i++) {
+                // Müşteri ekranı için URL (Masa no parametresi eklendi: ?m=X)
+                const targetUrl = `${baseUrl}/?r=${workspaceSlug}&m=${i}`;
+                const encodedUrl = encodeURIComponent(targetUrl);
+                
+                // QR Server API
+                const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodedUrl}`;
+
+                html += `
+                    <div class="qr-card">
+                        <h3>${workspaceName}</h3>
+                        <img src="${qrImageUrl}" alt="Masa ${i} QR" loading="lazy">
+                        <p>Masa ${i}</p>
+                    </div>
+                `;
+            }
+
+            qrGridContainer.innerHTML = html;
+            qrGridContainer.classList.remove('hidden');
+            printQrBtn.classList.remove('hidden');
+
+            generateQrBtn.innerHTML = '<i class="fa-solid fa-qrcode"></i> Karekodları Üret';
+            generateQrBtn.disabled = false;
+        }, 500); // UI thread için ufak bir bekleme
+    });
+}

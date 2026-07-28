@@ -3,12 +3,13 @@ import { supabase } from './supabaseClient.js';
 // --- SİSTEM STATE ---
 const urlParams = new URLSearchParams(window.location.search);
 const workspaceSlug = urlParams.get('r');
+const autoTable = urlParams.get('m');
 let currentWorkspace = null;
 let MENU_DATA = [];
 
 // --- SEPET STATE ---
 let cart = [];
-let selectedTable = '';
+let selectedTable = autoTable || '';
 let currentProduct = null;
 let currentQty = 1;
 
@@ -168,10 +169,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         setupOrderStatusSubscription();
     }
 
-    // Masa seçimi
-    tableSelector.addEventListener('change', (e) => {
-        selectedTable = e.target.value;
-    });
+    // Masa seçimi (Eğer URL'den gelmemişse)
+    if (autoTable) {
+        // Sepetteki masa seçiciyi gizle
+        const cartTableSelector = document.querySelector('.cart-table-selector');
+        if (cartTableSelector) cartTableSelector.style.display = 'none';
+        
+        // Garson çağırırken sorulan masa seçiciyi atla (direkt çağır)
+        // Bunun mantığı callWaiter() fonksiyonunda yönetilecek
+    } else {
+        tableSelector.addEventListener('change', (e) => {
+            selectedTable = e.target.value;
+        });
+    }
 
     // Cart Modal Kontrolleri
     cartButton.addEventListener('click', openCart);
@@ -630,8 +640,10 @@ async function submitOrder() {
         // Sepeti temizle
         cart = [];
         orderNotes.value = '';
-        selectedTable = '';
-        tableSelector.value = '';
+        if (!autoTable) {
+            selectedTable = '';
+            tableSelector.value = '';
+        }
         updateCartUI();
         confirmOrderBtn.disabled = false;
         confirmOrderBtn.innerHTML = '<span>Siparişi Onayla</span><i class="fa-solid fa-arrow-right"></i>';

@@ -1,11 +1,22 @@
 import { supabase } from './supabaseClient.js';
+import { CONFIG } from './config.js';
 
 // --- SİSTEM STATE ---
 const urlParams = new URLSearchParams(window.location.search);
-const workspaceSlug = urlParams.get('r');
 const autoTable = urlParams.get('m');
-let currentWorkspace = null;
 let MENU_DATA = [];
+
+// --- TEMA UYGULAMA ---
+function applyTheme() {
+    const root = document.documentElement;
+    root.style.setProperty('--primary', CONFIG.THEME.PRIMARY_COLOR);
+    root.style.setProperty('--accent', CONFIG.THEME.ACCENT_COLOR);
+    root.style.setProperty('--bg-color', CONFIG.THEME.BG_COLOR);
+    root.style.setProperty('--surface', CONFIG.THEME.SURFACE_COLOR);
+    root.style.setProperty('--text-main', CONFIG.THEME.TEXT_MAIN);
+    root.style.setProperty('--text-muted', CONFIG.THEME.TEXT_MUTED);
+}
+applyTheme();
 
 // --- SEPET STATE ---
 let cart = [];
@@ -132,26 +143,23 @@ requestAnimationFrame(raf);
 
 // --- İLK YÜKLEME ---
 document.addEventListener('DOMContentLoaded', async () => {
-    if (!workspaceSlug) {
-        document.body.innerHTML = '<div style="text-align:center; padding: 40px; font-family: Outfit, sans-serif;"><h1>Geçersiz Karekod!</h1><p style="color:#64748b; margin-top:10px;">Lütfen masanızdaki geçerli restoran QR kodunu okutun.</p><p style="margin-top:20px; font-size:0.9rem;">Örnek: ?r=restoran-adi</p></div>';
-        return;
-    }
-
-    // 1. Restoranı (Workspace) Bul
-    const { data: ws, error: wsErr } = await supabase
-        .from('workspaces')
-        .select('*')
-        .eq('slug', workspaceSlug)
-        .single();
     
-    if (wsErr || !ws) {
-        document.body.innerHTML = '<div style="text-align:center; padding: 40px; font-family: Outfit, sans-serif;"><h1>Restoran Bulunamadı!</h1><p style="color:#64748b; margin-top:10px;">Bu restoran sistemde kayıtlı değil.</p></div>';
-        return;
-    }
+    // Restoran Bilgilerini UI'a Uygula
+    document.title = `${CONFIG.RESTAURANT_NAME} | Sipariş Menüsü`;
+    document.querySelector('.header-content h1').innerText = CONFIG.RESTAURANT_NAME;
+    
+    const heroTitle = document.querySelector('.hero-content h2');
+    const heroSub = document.querySelector('.hero-content p');
+    if(heroTitle) heroTitle.innerText = CONFIG.HERO_TITLE;
+    if(heroSub) heroSub.innerText = CONFIG.HERO_SUBTITLE;
 
-    currentWorkspace = ws;
-    document.title = `${ws.name} | Sipariş Menüsü`;
-    document.querySelector('.header-content h1').innerText = ws.name;
+    // Özellik bayraklarını uygula
+    if (!CONFIG.ENABLE_WAITER_CALL && callWaiterBtn) {
+        callWaiterBtn.style.display = 'none';
+    }
+    if (!CONFIG.ENABLE_ORDER_NOTES && orderNotes) {
+        orderNotes.parentElement.style.display = 'none';
+    }
 
     // 2. Menüyü Çek ve Oluştur
     await fetchAndBuildMenu();
@@ -244,8 +252,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 // --- FONKSİYONLAR ---
 
 async function fetchAndBuildMenu() {
-    const { data: categories } = await supabase.from('categories').select('*').eq('workspace_id', currentWorkspace.id).order('created_at', { ascending: true });
-    const { data: products } = await supabase.from('products').select('*').eq('workspace_id', currentWorkspace.id).order('created_at', { ascending: true });
+    const { data: categories } = await supabase.from('categories').select('*').order('created_at', { ascending: true });
+    const { data: products } = await supabase.from('products').select('*').order('created_at', { ascending: true });
     
     MENU_DATA = [];
     if (categories && products) {
@@ -270,11 +278,9 @@ async function fetchAndBuildMenu() {
 }
 
 async function fetchTables() {
-    if (!currentWorkspace) return;
     const { data: tables, error } = await supabase
         .from('tables')
-        .select('*')
-        .eq('workspace_id', currentWorkspace.id)
+        .select('table_number, status')
         .order('table_number', { ascending: true });
 
     if (error) {
@@ -329,15 +335,9 @@ async function fetchTables() {
 }
 
 function setupTableSubscription() {
-    if(!currentWorkspace) return;
     supabase
-        .channel('public:tables:ws=' + currentWorkspace.id)
-        .on('postgres_changes', { 
-            event: '*', 
-            schema: 'public', 
-            table: 'tables',
-            filter: `workspace_id=eq.${currentWorkspace.id}`
-        }, payload => {
+        .channel('public:tables')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'tables' }, payload => {
             fetchTables();
         })
         .subscribe();
@@ -602,7 +602,6 @@ async function submitOrder() {
         .from('orders')
         .insert([
             {
-                workspace_id: currentWorkspace.id,
                 table_number: "Masa " + selectedTable,
                 items: cart, // Cart objesi artık özel notları da barındırıyor (item.note)
                 notes: finalNotes, // Genel sipariş notu + cihaz bilgisi
@@ -629,7 +628,6 @@ async function submitOrder() {
         const { error: updateError } = await supabase
             .from('tables')
             .update({ status: 'occupied' })
-            .eq('workspace_id', currentWorkspace.id)
             .eq('table_number', selectedTable);
             
         if (updateError) {
@@ -670,7 +668,6 @@ async function checkOrderStatus() {
         .from('orders')
         .select('status')
         .eq('id', currentOrderId)
-        .eq('workspace_id', currentWorkspace.id)
         .single();
 
     if (error || !data) {
@@ -742,7 +739,6 @@ async function sendWaiterCall(tNo) {
     const { error } = await supabase
         .from('waiter_calls')
         .insert([{ 
-            workspace_id: currentWorkspace.id,
             table_number: "Masa " + tNo, 
             status: 'pending' 
         }]);

@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient.js';
+import { CONFIG } from './config.js';
 
 // DOM Elementleri
 const pendingOrdersContainer = document.getElementById('pendingOrders');
@@ -20,8 +21,6 @@ const confirmBtnYes = document.getElementById('confirmBtnYes');
 
 const logoutBtn = document.getElementById('logoutBtn');
 
-let currentWorkspaceId = null;
-
 // Sayfa yüklendiğinde Admin'i Başlat
 document.addEventListener('DOMContentLoaded', async () => {
     await initAdmin();
@@ -35,24 +34,11 @@ async function initAdmin() {
         return;
     }
 
-    // 2. Kullanıcının İşletmesini (Workspace) Bul
-    const { data: workspace, error } = await supabase
-        .from('workspaces')
-        .select('*')
-        .eq('owner_id', session.user.id)
-        .single();
-
-    if (error || !workspace) {
-        // İşletme profili yoksa kayıt sayfasına yönlendir. (Session'ı kapatmıyoruz ki kayıt sayfasında kullanabilsin)
-        window.location.href = 'register.html';
-        return;
-    }
-
-    currentWorkspaceId = workspace.id;
+    // 2. Kullanıcının İşletmesini (Workspace) Bul (İPTAL - Master Template'de gerek yok)
     
     // Logo kısmına restoran adını yaz
     const logoEl = document.querySelector('.logo');
-    if(logoEl) logoEl.innerText = workspace.name + ' Admin';
+    if(logoEl) logoEl.innerText = CONFIG.RESTAURANT_NAME + ' Admin';
 
     // 3. Çıkış Yap Butonu
     if (logoutBtn) {
@@ -79,7 +65,6 @@ async function fetchOrders() {
     const { data: orders, error } = await supabase
         .from('orders')
         .select('*')
-        .eq('workspace_id', currentWorkspaceId)
         .order('created_at', { ascending: false });
 
     if (error) {
@@ -98,8 +83,7 @@ function setupRealtimeSubscription() {
         .on('postgres_changes', { 
             event: '*', 
             schema: 'public', 
-            table: 'orders',
-            filter: `workspace_id=eq.${currentWorkspaceId}`
+            table: 'orders'
         }, payload => {
             if (payload.eventType === 'INSERT') {
                 playNotificationSound();
@@ -114,8 +98,7 @@ function setupRealtimeSubscription() {
         .on('postgres_changes', { 
             event: '*', 
             schema: 'public', 
-            table: 'waiter_calls',
-            filter: `workspace_id=eq.${currentWorkspaceId}`
+            table: 'waiter_calls'
         }, payload => {
             if (payload.eventType === 'INSERT') {
                 playWaiterSound();
@@ -239,8 +222,7 @@ window.updateOrderStatus = async (orderId, newStatus) => {
     const { error } = await supabase
         .from('orders')
         .update({ status: newStatus })
-        .eq('id', orderId)
-        .eq('workspace_id', currentWorkspaceId);
+        .eq('id', orderId);
 
     if (error) {
         alert('Durum güncellenirken hata oluştu!');
@@ -280,8 +262,7 @@ window.deleteOrder = async (orderId) => {
         const { error } = await supabase
             .from('orders')
             .update({ status: 'archived' })
-            .eq('id', orderId)
-            .eq('workspace_id', currentWorkspaceId);
+            .eq('id', orderId);
 
         if (error) {
             alert('Arşivlenirken hata oluştu!');
@@ -365,8 +346,7 @@ window.resolveWaiterCall = async (callId) => {
     const { error } = await supabase
         .from('waiter_calls')
         .update({ status: 'resolved' })
-        .eq('id', callId)
-        .eq('workspace_id', currentWorkspaceId);
+        .eq('id', callId);
 
     if (error) {
         alert('Hata oluştu!');
@@ -392,9 +372,8 @@ async function initMenuManagement() {
         const btn = categoryForm.querySelector('button');
         btn.disabled = true; btn.innerText = 'Ekleniyor...';
 
-        const { error } = await supabase
-            .from('categories')
-            .insert([{ workspace_id: currentWorkspaceId, name: catName }]);
+        const { error } = await supabase.from('categories')
+            .insert([{ name: catName }]);
         
         btn.disabled = false; btn.innerText = 'Ekle';
         
@@ -425,7 +404,6 @@ async function initMenuManagement() {
         const { error } = await supabase
             .from('products')
             .insert([{ 
-                workspace_id: currentWorkspaceId, 
                 category_id: catId, 
                 name: name, 
                 price: parseFloat(price), 
@@ -450,14 +428,8 @@ async function initMenuManagement() {
 }
 
 async function fetchMenuData() {
-    if (!currentWorkspaceId) return;
-
     // 1. Kategorileri Çek
-    const { data: categories, error: catError } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('workspace_id', currentWorkspaceId)
-        .order('created_at', { ascending: true });
+    const { data: categories, error: catError } = await supabase.from('categories').select('*').order('created_at', { ascending: true });
 
     if (catError) return console.error(catError);
 
@@ -465,7 +437,6 @@ async function fetchMenuData() {
     const { data: products, error: prodError } = await supabase
         .from('products')
         .select('*')
-        .eq('workspace_id', currentWorkspaceId)
         .order('created_at', { ascending: true });
         
     if (prodError) return console.error(prodError);
@@ -546,11 +517,6 @@ const printQrBtn = document.getElementById('printQrBtn');
 
 if (generateQrBtn) {
     generateQrBtn.addEventListener('click', () => {
-        if (!currentWorkspace || !currentWorkspace.slug) {
-            alert("İşletme bilgileri yüklenemedi.");
-            return;
-        }
-
         const count = parseInt(tableCountInput.value);
         if (isNaN(count) || count < 1 || count > 200) {
             alert("Lütfen 1 ile 200 arasında geçerli bir masa sayısı girin.");
@@ -563,12 +529,12 @@ if (generateQrBtn) {
         setTimeout(() => {
             let html = '';
             const baseUrl = window.location.origin; // e.g. https://restaurant-qr-yeni.vercel.app
-            const workspaceSlug = currentWorkspace.slug;
-            const workspaceName = currentWorkspace.name;
+            const workspaceSlug = CONFIG.RESTAURANT_SLUG;
+            const workspaceName = CONFIG.RESTAURANT_NAME;
 
             for (let i = 1; i <= count; i++) {
-                // Müşteri ekranı için URL (Masa no parametresi eklendi: ?m=X)
-                const targetUrl = `${baseUrl}/?r=${workspaceSlug}&m=${i}`;
+                // Müşteri ekranı için URL (Artık sadece ?m=X parametresi eklendi)
+                const targetUrl = `${baseUrl}/?m=${i}`;
                 const encodedUrl = encodeURIComponent(targetUrl);
                 
                 // QR Server API

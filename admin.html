@@ -128,9 +128,6 @@
                 <a href="#" class="nav-item active" data-tab="ordersTab">
                     <i class="fa-solid fa-list-check"></i> Siparişler
                 </a>
-                <a href="#" class="nav-item" data-tab="menuTab">
-                    <i class="fa-solid fa-utensils"></i> Menü Yönetimi
-                </a>
                 <a href="#" class="nav-item" data-tab="qrTab">
                     <i class="fa-solid fa-qrcode"></i> Karekod (QR)
                 </a>
@@ -190,68 +187,8 @@
                     </div>
                 </div>
             </section> <!-- End Siparişler Tab -->
-
-            <!-- MENÜ YÖNETİMİ SEKMESİ -->
-            <section id="menuTab" class="tab-content" style="display: none;">
-                <header class="top-header" style="margin-bottom: 2rem;">
-                    <h2>Menü Yönetimi</h2>
-                    <p style="color: var(--text-muted); margin-top: 0.5rem;">Kategorilerinizi ve ürünlerinizi buradan yönetin.</p>
-                </header>
-                
-                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
-                    
-                    <!-- Sol Taraf: Kategori ve Ürün Ekleme -->
-                    <div>
-                        <!-- Kategori Ekleme Kartı -->
-                        <div style="background: var(--surface); padding: 1.5rem; border-radius: var(--radius-lg); box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 1.5rem;">
-                            <h3 style="margin-bottom: 1rem; color: var(--primary);"><i class="fa-solid fa-folder-plus"></i> Kategori Ekle</h3>
-                            <form id="categoryForm">
-                                <div style="margin-bottom: 1rem;">
-                                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem;">Kategori Adı</label>
-                                    <input type="text" id="categoryName" required style="width: 100%; padding: 0.8rem; border: 1px solid var(--border); border-radius: var(--radius-md);" placeholder="Örn: İçecekler">
-                                </div>
-                                <button type="submit" class="btn btn-primary" style="width: 100%;">Ekle</button>
-                            </form>
-                        </div>
-
-                        <!-- Ürün Ekleme Kartı -->
-                        <div style="background: var(--surface); padding: 1.5rem; border-radius: var(--radius-lg); box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                            <h3 style="margin-bottom: 1rem; color: var(--primary);"><i class="fa-solid fa-burger"></i> Ürün Ekle</h3>
-                            <form id="productForm">
-                                <div style="margin-bottom: 1rem;">
-                                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem;">Hangi Kategoriye Eklenecek?</label>
-                                    <select id="productCategorySelect" required style="width: 100%; padding: 0.8rem; border: 1px solid var(--border); border-radius: var(--radius-md);">
-                                        <option value="">Önce kategori oluşturun...</option>
-                                    </select>
-                                </div>
-                                <div style="margin-bottom: 1rem;">
-                                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem;">Ürün Adı</label>
-                                    <input type="text" id="productName" required style="width: 100%; padding: 0.8rem; border: 1px solid var(--border); border-radius: var(--radius-md);" placeholder="Örn: Coca Cola">
-                                </div>
-                                <div style="margin-bottom: 1rem;">
-                                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem;">Fiyat (TL)</label>
-                                    <input type="number" id="productPrice" required step="0.01" style="width: 100%; padding: 0.8rem; border: 1px solid var(--border); border-radius: var(--radius-md);" placeholder="Örn: 45">
-                                </div>
-                                <div style="margin-bottom: 1rem;">
-                                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem;">Açıklama (Opsiyonel)</label>
-                                    <input type="text" id="productDesc" style="width: 100%; padding: 0.8rem; border: 1px solid var(--border); border-radius: var(--radius-md);" placeholder="Örn: Soğuk içiniz">
-                                </div>
-                                <button type="submit" class="btn btn-primary" style="width: 100%;">Ürünü Kaydet</button>
-                            </form>
-                        </div>
-                    </div>
-
-                    <!-- Sağ Taraf: Mevcut Menü Listesi -->
-                    <div style="background: var(--surface); padding: 1.5rem; border-radius: var(--radius-lg); box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                        <h3 style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;"><i class="fa-solid fa-list"></i> Mevcut Menünüz</h3>
-                        <div id="menuPreviewList">
-                            <!-- JS ile Kategoriler ve İçindeki Ürünler Buraya Gelecek -->
-                            <p style="color: var(--text-muted); text-align: center; margin-top: 2rem;">Henüz kategori veya ürün eklemediniz.</p>
-                        </div>
-                    </div>
-
-                </div>
-            </section>
+            
+            <!-- MENÜ YÖNETİMİ KALDIRILDI -->
             
             <!-- QR KAREKOD SEKMESİ (Hazırlanıyor) -->
             <section id="qrTab" class="tab-content" style="display: none;">

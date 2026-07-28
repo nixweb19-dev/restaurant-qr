@@ -252,25 +252,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 // --- FONKSİYONLAR ---
 
 async function fetchAndBuildMenu() {
-    const { data: categories } = await supabase.from('categories').select('*').order('created_at', { ascending: true });
-    const { data: products } = await supabase.from('products').select('*').order('created_at', { ascending: true });
+    MENU_DATA = CONFIG.MENU_DATA;
     
-    MENU_DATA = [];
-    if (categories && products) {
-        categories.forEach(cat => {
-            const catProds = products.filter(p => p.category_id === cat.id).map(p => ({
-                id: p.id,
-                name: p.name,
-                price: parseFloat(p.price),
-                desc: p.description || ''
-            }));
-            if (catProds.length > 0) {
-                MENU_DATA.push({ category: cat.name, products: catProds });
-            }
-        });
-    }
-    
-    if (MENU_DATA.length === 0) {
+    if (!MENU_DATA || MENU_DATA.length === 0) {
         menuContainer.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--text-muted);">Restoran henüz menü eklememiş.</div>';
     } else {
         renderMenu();

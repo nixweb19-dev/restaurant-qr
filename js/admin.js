@@ -43,8 +43,7 @@ async function initAdmin() {
         .single();
 
     if (error || !workspace) {
-        alert("Size ait bir işletme profili bulunamadı! Lütfen kayıt olun.");
-        await supabase.auth.signOut();
+        // İşletme profili yoksa kayıt sayfasına yönlendir. (Session'ı kapatmıyoruz ki kayıt sayfasında kullanabilsin)
         window.location.href = 'register.html';
         return;
     }

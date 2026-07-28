@@ -31,15 +31,38 @@ async function initAdmin() {
     const isAuthenticated = sessionStorage.getItem('lsemd_admin_auth') === 'true';
     
     if (!isAuthenticated) {
-        const password = prompt("Admin Paneli Şifresini Giriniz:");
-        if (password !== CONFIG.ADMIN_PASSWORD) {
-            alert("Hatalı şifre!");
-            document.body.innerHTML = '<div style="text-align:center; padding:50px;"><h1>Erişim Reddedildi</h1><p>Şifre yanlış.</p><button onclick="location.reload()" style="padding:10px 20px; cursor:pointer;">Tekrar Dene</button></div>';
-            return;
-        } else {
-            sessionStorage.setItem('lsemd_admin_auth', 'true');
-        }
+        const passwordModal = document.getElementById('passwordModal');
+        const passInput = document.getElementById('adminPasswordInput');
+        const submitBtn = document.getElementById('adminPasswordSubmitBtn');
+        
+        passwordModal.classList.remove('hidden');
+        passInput.focus();
+        
+        const checkPassword = () => {
+            const val = passInput.value;
+            if (val === CONFIG.ADMIN_PASSWORD) {
+                sessionStorage.setItem('lsemd_admin_auth', 'true');
+                passwordModal.classList.add('hidden');
+                continueAdminInit();
+            } else {
+                passInput.style.borderColor = 'red';
+                passInput.value = '';
+                passInput.placeholder = 'Hatalı Şifre!';
+            }
+        };
+
+        submitBtn.addEventListener('click', checkPassword);
+        passInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkPassword();
+        });
+        
+        return; // İşleme devam etmeyi burada kes, şifre doğruysa continueAdminInit çağrılacak.
     }
+
+    continueAdminInit();
+}
+
+async function continueAdminInit() {
 
 
     

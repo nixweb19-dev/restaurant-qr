@@ -232,6 +232,21 @@
         </main>
     </div>
 
+    <!-- Şifre Giriş Modalı -->
+    <div id="passwordModal" class="modal hidden" style="z-index: 3000;">
+        <div class="modal-content" style="max-width: 350px; border-radius: var(--radius-lg); transform: scale(0.9); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1);">
+            <div class="modal-header" style="justify-content: center; padding-top: 2rem; border-bottom: none;">
+                <div style="font-size: 3rem; color: var(--primary);"><i class="fa-solid fa-lock"></i></div>
+            </div>
+            <div class="modal-body" style="text-align: center; padding: 0 1.5rem 2.5rem;">
+                <h3 style="margin-bottom: 0.8rem; font-size: 1.4rem; font-weight: 700;">Yönetici Girişi</h3>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.95rem;">Devam etmek için admin şifresini giriniz.</p>
+                <input type="password" id="adminPasswordInput" class="form-control" placeholder="Şifre" style="margin-bottom: 1.5rem; text-align: center; font-size: 1.2rem; padding: 0.8rem; border-radius: var(--radius-md); border: 2px solid var(--border-color); outline: none; transition: border-color 0.3s;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border-color)'" />
+                <button id="adminPasswordSubmitBtn" class="btn btn-primary" style="width: 100%; padding: 0.8rem; font-size: 1.1rem; border-radius: var(--radius-pill);">Giriş Yap</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Özel Onay Modalı -->
     <div id="confirmModal" class="modal hidden" style="z-index: 2000;">
         <div class="modal-content" style="max-width: 350px; border-radius: var(--radius-lg); transform: scale(0.9); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1);">

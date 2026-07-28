@@ -10,8 +10,8 @@ export const CONFIG = {
     SUPABASE_ANON_KEY: "sb_publishable_deP59WRC7Gm4KK7CGbTOvg_-Cn02H-p", // Yeni müşterinin Anon Key'i
 
     // 2. İŞLETME BİLGİLERİ
-    RESTAURANT_NAME: "NOVA Cafe & Bistro",
-    LOGO_URL: "", // İşletmenizin logo linki (Örn: "https://site.com/logo.png"). Boş bırakırsanız sadece isim yazar.
+    RESTAURANT_NAME: "NİXWEB", // Bu metin sayfada görünen ana isimdir
+    LOGO_URL: "", // İşletmenizin logo resminin linki (Örn: "https://site.com/logo.png"). Eğer görsel yoksa boş bırakın.
     RESTAURANT_SLUG: "nova-cafe", // QR Çıktıları ve URL için kısa isim (Boşluksuz, Türkçe karaktersiz)
     TABLE_COUNT: 10, // Restorandaki masa sayısı (Seçenekleri otomatik oluşturur)
     PHONE_NUMBER: "0555 555 55 55",
@@ -35,7 +35,7 @@ export const CONFIG = {
     HERO_TITLE: "Hoş Geldiniz",
     HERO_SUBTITLE: "En özel lezzetleri sizin için özenle hazırlıyoruz. Hemen siparişinizi oluşturun.",
     FOOTER_TEXT: "© 2026 LSEMD Yazılım - Tüm Hakları Saklıdır.",
-    
+
     // 6. ÖZELLİK AÇ/KAPA (FEATURE FLAGS)
     ENABLE_WAITER_CALL: true,     // Garson Çağırma Butonu aktif mi?
     ENABLE_ORDER_NOTES: true,     // Sipariş notu aktif mi?

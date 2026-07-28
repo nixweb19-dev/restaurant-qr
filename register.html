@@ -193,28 +193,41 @@
             registerBtn.disabled = true;
             errorMsg.style.display = 'none';
 
-            // 1. Kullanıcıyı oluştur
-            const { data: authData, error: authError } = await supabase.auth.signUp({
-                email: email,
-                password: password,
-            });
-
-            if (authError) {
-                errorMsg.innerText = "Kayıt hatası: " + authError.message;
-                errorMsg.style.display = 'block';
-                registerBtn.innerHTML = 'Kayıt Ol ve Başla <i class="fa-solid fa-rocket"></i>';
-                registerBtn.disabled = false;
-                return;
-            }
-
             // Eğer auto-confirm kapalıysa kullanıcıya e-posta doğrulaması gidebilir. 
-            // Demo/MVP aşamasında genelde auto-confirm açık bırakılır.
-            const userId = authData.user?.id;
-            
-            if (userId) {
-                // 2. Workspace (İşletme) oluştur
+            try {
+                // 1. Önce kullanıcının zaten giriş yapıp yapmadığına bakalım
+                const { data: sessionData } = await supabase.auth.getSession();
+                let userId = null;
+
+                if (sessionData && sessionData.session) {
+                    userId = sessionData.session.user.id;
+                } else {
+                    // 2. Giriş yapmamışsa normal Kayıt (SignUp) işlemini yap
+                    const { data, error } = await supabase.auth.signUp({
+                        email: email,
+                        password: password,
+                    });
+
+                    if (error) {
+                        errorMsg.innerText = "Kayıt hatası: " + error.message;
+                        errorMsg.style.display = 'block';
+                        registerBtn.innerHTML = 'Kayıt Ol ve Başla <i class="fa-solid fa-rocket"></i>';
+                        registerBtn.disabled = false;
+                        return;
+                    }
+                    
+                    if (!data.user) {
+                        errorMsg.innerText = "Bilinmeyen bir hata oluştu.";
+                        errorMsg.style.display = 'block';
+                        registerBtn.innerHTML = 'Kayıt Ol ve Başla <i class="fa-solid fa-rocket"></i>';
+                        registerBtn.disabled = false;
+                        return;
+                    }
+                    userId = data.user.id;
+                }
+
+                // 3. İşletme profilini (Workspace) oluştur
                 const slug = createSlug(restaurantName) + '-' + Math.floor(Math.random() * 1000);
-                
                 const { error: workspaceError } = await supabase
                     .from('workspaces')
                     .insert([
@@ -222,16 +235,15 @@
                     ]);
                 
                 if (workspaceError) {
-                    // RLS kuralları yüzünden veya tablo eksikliğinden hata verebilir. (Kullanıcı Supabase SQL'i çalıştırmamış olabilir)
                     console.error(workspaceError);
-                    errorMsg.innerHTML = "İşletme profili oluşturulamadı. Lütfen Supabase'de SQL kurulumunu (Faz 2) yaptığınızdan emin olun.";
+                    errorMsg.innerHTML = "İşletme profili oluşturulamadı. Lütfen Supabase'de SQL kurulumunu yaptığınızdan emin olun.";
                     errorMsg.style.display = 'block';
                     registerBtn.innerHTML = 'Kayıt Ol ve Başla <i class="fa-solid fa-rocket"></i>';
                     registerBtn.disabled = false;
                     return;
                 }
 
-                // 3. Başarılı
+                // 4. Başarılı
                 successMsg.style.display = 'block';
                 setTimeout(() => {
                     window.location.href = 'admin.html';

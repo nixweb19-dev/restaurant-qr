@@ -305,6 +305,15 @@ window.deleteOrder = async (orderId) => {
     const isConfirmed = await showCustomConfirm('Siparişi arşive kaldırmak istediğinize emin misiniz?');
     
     if (isConfirmed) {
+        // 1. Optimistic UI (Hız hissi için anında gizle)
+        const card = document.getElementById(`order-${orderId}`);
+        if (card) {
+            card.style.opacity = '0.5';
+            card.style.pointerEvents = 'none';
+            const btn = card.querySelector('.btn-danger');
+            if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        }
+
         const { error } = await supabase
             .from('orders')
             .update({ status: 'archived' })
@@ -313,8 +322,7 @@ window.deleteOrder = async (orderId) => {
         if (error) {
             alert('Arşivlenirken hata oluştu!');
             console.error(error);
-        } else {
-            fetchOrders();
+            fetchOrders(); // Hata varsa geri getir
         }
     }
 };
@@ -371,7 +379,7 @@ function renderWaiterCalls(calls) {
     calls.forEach(call => {
         const safeTable = escapeHTML(call.table_number);
         html += `
-            <div class="waiter-toast" style="background: var(--surface); border-left: 4px solid var(--primary); padding: 15px; border-radius: 8px; box-shadow: var(--shadow-md); display: flex; align-items: center; justify-content: space-between; gap: 20px; animation: slideIn 0.3s ease-out; margin-bottom: 10px;">
+            <div id="waiter-call-${call.id}" class="waiter-toast" style="background: var(--surface); border-left: 4px solid var(--primary); padding: 15px; border-radius: 8px; box-shadow: var(--shadow-md); display: flex; align-items: center; justify-content: space-between; gap: 20px; animation: slideIn 0.3s ease-out; margin-bottom: 10px;">
                 <div>
                     <strong style="color: var(--primary); display: block; font-size: 1.1rem;"><i class="fa-solid fa-bell-concierge"></i> Garson Çağrısı</strong>
                     <span style="font-size: 1.2rem; font-weight: bold;">${safeTable}</span>
@@ -386,6 +394,15 @@ function renderWaiterCalls(calls) {
 window.resolveWaiterCall = async (callId) => {
     stopWaiterSound();
     
+    // Optimistic UI (Hız hissi için)
+    const el = document.getElementById(`waiter-call-${callId}`);
+    if (el) {
+        el.style.opacity = '0.5';
+        el.style.pointerEvents = 'none';
+        const btn = el.querySelector('button');
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+    }
+
     const { error } = await supabase
         .from('waiter_calls')
         .update({ status: 'resolved' })
@@ -393,8 +410,7 @@ window.resolveWaiterCall = async (callId) => {
 
     if (error) {
         alert('Hata oluştu!');
-    } else {
-        fetchWaiterCalls();
+        fetchWaiterCalls(); // Hata varsa listeyi sıfırla
     }
 };
 

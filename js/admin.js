@@ -9,17 +9,8 @@ const preparingCount = document.getElementById('preparingCount');
 const completedCount = document.getElementById('completedCount');
 const notificationSound = document.getElementById('notificationSound');
 
-// Tabs
-const tabOrders = document.getElementById('tab-orders');
-const tabTables = document.getElementById('tab-tables');
-const tabHistory = document.getElementById('tab-history');
-
-const viewOrders = document.getElementById('view-orders');
-const viewTables = document.getElementById('view-tables');
-const viewHistory = document.getElementById('view-history');
-const historyTableBody = document.getElementById('historyTableBody');
-const pageTitle = document.getElementById('page-title');
-const tablesContainer = document.getElementById('tablesContainer');
+const waiterCallsContainer = document.getElementById('waiterCallsContainer');
+const waiterSound = document.getElementById('waiterSound');
 
 // Custom Confirm Modal
 const confirmModal = document.getElementById('confirmModal');
@@ -27,59 +18,66 @@ const confirmModalMessage = document.getElementById('confirmModalMessage');
 const confirmBtnCancel = document.getElementById('confirmBtnCancel');
 const confirmBtnYes = document.getElementById('confirmBtnYes');
 
-const waiterCallsContainer = document.getElementById('waiterCallsContainer');
-const waiterSound = document.getElementById('waiterSound');
+const logoutBtn = document.getElementById('logoutBtn');
 
-// Sayfa yüklendiğinde mevcut verileri çek
+let currentWorkspaceId = null;
+
+// Sayfa yüklendiğinde Admin'i Başlat
 document.addEventListener('DOMContentLoaded', async () => {
-    setupTabs();
-    await fetchOrders();
-    await fetchTables();
-    await fetchWaiterCalls();
-    setupRealtimeSubscription();
+    await initAdmin();
 });
 
-// Sekme Geçiş Mantığı
-function setupTabs() {
-    tabOrders.addEventListener('click', (e) => {
-        e.preventDefault();
-        tabOrders.classList.add('active');
-        tabTables.classList.remove('active');
-        tabHistory.classList.remove('active');
-        viewOrders.classList.remove('hidden');
-        viewTables.classList.add('hidden');
-        viewHistory.classList.add('hidden');
-        pageTitle.innerText = 'Canlı Sipariş Takibi';
-    });
+async function initAdmin() {
+    // 1. Oturum Kontrolü
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+        window.location.href = 'login.html';
+        return;
+    }
 
-    tabTables.addEventListener('click', (e) => {
-        e.preventDefault();
-        tabTables.classList.add('active');
-        tabOrders.classList.remove('active');
-        tabHistory.classList.remove('active');
-        viewTables.classList.remove('hidden');
-        viewOrders.classList.add('hidden');
-        viewHistory.classList.add('hidden');
-        pageTitle.innerText = 'Masa Kontrolü';
-    });
+    // 2. Kullanıcının İşletmesini (Workspace) Bul
+    const { data: workspace, error } = await supabase
+        .from('workspaces')
+        .select('*')
+        .eq('owner_id', session.user.id)
+        .single();
 
-    tabHistory.addEventListener('click', (e) => {
-        e.preventDefault();
-        tabHistory.classList.add('active');
-        tabOrders.classList.remove('active');
-        tabTables.classList.remove('active');
-        viewHistory.classList.remove('hidden');
-        viewOrders.classList.add('hidden');
-        viewTables.classList.add('hidden');
-        pageTitle.innerText = 'Sipariş Geçmişi';
-    });
+    if (error || !workspace) {
+        alert("Size ait bir işletme profili bulunamadı! Lütfen kayıt olun.");
+        await supabase.auth.signOut();
+        window.location.href = 'register.html';
+        return;
+    }
+
+    currentWorkspaceId = workspace.id;
+    
+    // Logo kısmına restoran adını yaz
+    const logoEl = document.querySelector('.logo');
+    if(logoEl) logoEl.innerText = workspace.name + ' Admin';
+
+    // 3. Çıkış Yap Butonu
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            await supabase.auth.signOut();
+            window.location.href = 'login.html';
+        });
+    }
+
+    // 4. Mevcut Verileri Çek ve Dinle
+    await fetchOrders();
+    await fetchWaiterCalls();
+    setupRealtimeSubscription();
 }
 
-// Siparişleri Supabase'den Çek
+// Siparişleri Supabase'den Çek (Sadece bu işletmeye ait olanları)
 async function fetchOrders() {
+    if (!currentWorkspaceId) return;
+
     const { data: orders, error } = await supabase
-        .from('quick_orders')
+        .from('orders')
         .select('*')
+        .eq('workspace_id', currentWorkspaceId)
         .order('created_at', { ascending: false });
 
     if (error) {
@@ -94,9 +92,13 @@ async function fetchOrders() {
 function setupRealtimeSubscription() {
     // Siparişler İçin
     supabase
-        .channel('public:quick_orders')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'quick_orders' }, payload => {
-            console.log('Sipariş Değişikliği Algılandı:', payload);
+        .channel('workspace_orders')
+        .on('postgres_changes', { 
+            event: '*', 
+            schema: 'public', 
+            table: 'orders',
+            filter: `workspace_id=eq.${currentWorkspaceId}`
+        }, payload => {
             if (payload.eventType === 'INSERT') {
                 playNotificationSound();
             }
@@ -104,19 +106,15 @@ function setupRealtimeSubscription() {
         })
         .subscribe();
 
-    // Masalar İçin
-    supabase
-        .channel('public:quick_tables')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'quick_tables' }, payload => {
-            console.log('Masa Değişikliği Algılandı:', payload);
-            fetchTables();
-        })
-        .subscribe();
-
     // Garson Çağrıları İçin
     supabase
-        .channel('public:waiter_calls')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'waiter_calls' }, payload => {
+        .channel('workspace_waiter_calls')
+        .on('postgres_changes', { 
+            event: '*', 
+            schema: 'public', 
+            table: 'waiter_calls',
+            filter: `workspace_id=eq.${currentWorkspaceId}`
+        }, payload => {
             if (payload.eventType === 'INSERT') {
                 playWaiterSound();
             }
@@ -127,6 +125,8 @@ function setupRealtimeSubscription() {
 
 // Siparişleri Ekrana Çiz
 function renderOrders(orders) {
+    if(!pendingOrdersContainer) return;
+    
     // Sütunları temizle
     pendingOrdersContainer.innerHTML = '';
     preparingOrdersContainer.innerHTML = '';
@@ -153,57 +153,6 @@ function renderOrders(orders) {
     pendingCount.innerText = counts.pending;
     preparingCount.innerText = counts.preparing;
     completedCount.innerText = counts.completed;
-
-    // Sipariş Geçmişi Tablosunu Güncelle
-    renderHistory(orders);
-}
-
-function renderHistory(orders) {
-    let html = '';
-    
-    if (!orders || orders.length === 0) {
-        historyTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Henüz sipariş bulunmuyor.</td></tr>';
-        return;
-    }
-
-    orders.forEach(order => {
-        const dateTime = new Date(order.created_at).toLocaleString('tr-TR', { 
-            day: '2-digit', month: '2-digit', year: 'numeric', 
-            hour: '2-digit', minute: '2-digit' 
-        });
-        
-        let itemsText = '';
-        if (order.items && Array.isArray(order.items)) {
-            itemsText = escapeHTML(order.items.map(item => `${item.quantity}x ${item.name}`).join(', '));
-        }
-        
-        let statusBadge = '';
-        if (order.status === 'archived') {
-            statusBadge = '<span class="history-status-badge archived">Arşivlendi</span>';
-        } else if (order.status === 'completed') {
-            statusBadge = '<span class="history-status-badge completed">Tamamlandı</span>';
-        } else if (order.status === 'preparing') {
-            statusBadge = '<span class="history-status-badge preparing">Hazırlanıyor</span>';
-        } else {
-            statusBadge = '<span class="history-status-badge pending">Bekliyor</span>';
-        }
-
-        const safeTable = escapeHTML(order.table_no);
-        const safeNotes = escapeHTML(order.notes);
-
-        html += `
-            <tr>
-                <td>${dateTime}</td>
-                <td style="font-weight:600;">${safeTable || '-'}</td>
-                <td>${itemsText}</td>
-                <td style="font-size:0.85rem; color:var(--text-muted); max-width:200px;">${safeNotes || '-'}</td>
-                <td style="font-weight:600; color:var(--primary);">${order.total_price} TL</td>
-                <td>${statusBadge}</td>
-            </tr>
-        `;
-    });
-
-    historyTableBody.innerHTML = html;
 }
 
 // XSS (Zararlı Kod) Koruması için Yardımcı Fonksiyon
@@ -220,14 +169,11 @@ function escapeHTML(str) {
 // Sipariş Kartı HTML'i Oluştur
 function createOrderCard(order) {
     const dateTime = new Date(order.created_at).toLocaleString('tr-TR', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric', 
         hour: '2-digit', 
         minute: '2-digit' 
     });
     
-    // Sepet detaylarını formatla (Güvenli metin)
+    // Sepet detaylarını formatla
     let itemsHtml = '';
     if (order.items && Array.isArray(order.items)) {
         order.items.forEach(item => {
@@ -246,14 +192,14 @@ function createOrderCard(order) {
     }
 
     const safeNotes = escapeHTML(order.notes);
-    const safeTableNo = escapeHTML(order.table_no);
+    const safeTableNo = escapeHTML(order.table_number); // YENİ: table_no yerine table_number
 
     // Durum değiştirme butonları
     let statusBtns = '';
     if (order.status === 'pending') {
-        statusBtns = `<button onclick="updateOrderStatus('${order.id}', 'preparing')" class="btn btn-warning btn-sm">Hazırlanıyor Olarak İşaretle</button>`;
+        statusBtns = `<button onclick="updateOrderStatus('${order.id}', 'preparing')" class="btn btn-warning btn-sm">Hazırlanıyor</button>`;
     } else if (order.status === 'preparing') {
-        statusBtns = `<button onclick="updateOrderStatus('${order.id}', 'completed')" class="btn btn-success btn-sm">Teslim Edildi İşaretle</button>`;
+        statusBtns = `<button onclick="updateOrderStatus('${order.id}', 'completed')" class="btn btn-success btn-sm">Teslim Edildi</button>`;
     } else if (order.status === 'completed') {
         statusBtns = `<button onclick="deleteOrder('${order.id}')" class="btn btn-danger btn-sm"><i class="fa-solid fa-trash"></i> Sil</button>`;
     }
@@ -272,11 +218,11 @@ function createOrderCard(order) {
                 
                 ${order.notes ? `
                 <div class="order-note">
-                    <i class="fa-regular fa-comment-dots"></i> <strong>Sipariş Notu:</strong> [${safeNotes}]
+                    <i class="fa-regular fa-comment-dots"></i> <strong>Not:</strong> [${safeNotes}]
                 </div>` : ''}
                 
                 <div class="order-total" style="text-align:right; font-weight:700; margin-top:10px; font-size:1.1rem;">
-                    Toplam: ${order.total_price} TL
+                    ${order.total_price} TL
                 </div>
             </div>
             <div class="order-card-footer">
@@ -286,12 +232,13 @@ function createOrderCard(order) {
     `;
 }
 
-// Sipariş Durumunu Güncelle (Window objesine atıyoruz ki HTML içinden onclick ile çağrılabilsin)
+// Sipariş Durumunu Güncelle
 window.updateOrderStatus = async (orderId, newStatus) => {
     const { error } = await supabase
-        .from('quick_orders')
+        .from('orders')
         .update({ status: newStatus })
-        .eq('id', orderId);
+        .eq('id', orderId)
+        .eq('workspace_id', currentWorkspaceId);
 
     if (error) {
         alert('Durum güncellenirken hata oluştu!');
@@ -302,18 +249,15 @@ window.updateOrderStatus = async (orderId, newStatus) => {
 // Özel Confirm Fonksiyonu (Promise döner)
 function showCustomConfirm(message) {
     return new Promise((resolve) => {
+        if(!confirmModal) {
+            resolve(confirm("Emin misiniz?")); return;
+        }
+        
         confirmModalMessage.innerText = message;
         confirmModal.classList.remove('hidden');
 
-        const handleYes = () => {
-            cleanup();
-            resolve(true);
-        };
-
-        const handleNo = () => {
-            cleanup();
-            resolve(false);
-        };
+        const handleYes = () => { cleanup(); resolve(true); };
+        const handleNo = () => { cleanup(); resolve(false); };
 
         const cleanup = () => {
             confirmModal.classList.add('hidden');
@@ -331,54 +275,58 @@ window.deleteOrder = async (orderId) => {
     const isConfirmed = await showCustomConfirm('Siparişi arşive kaldırmak istediğinize emin misiniz?');
     
     if (isConfirmed) {
-        // Artık veritabanından kalıcı olarak silmek yerine status'u 'archived' yapıyoruz
         const { error } = await supabase
-            .from('quick_orders')
+            .from('orders')
             .update({ status: 'archived' })
-            .eq('id', orderId);
+            .eq('id', orderId)
+            .eq('workspace_id', currentWorkspaceId);
 
         if (error) {
             alert('Arşivlenirken hata oluştu!');
             console.error(error);
+        } else {
+            fetchOrders();
         }
     }
 };
 
-// Ses Çalma Fonksiyonu
+// --- SES DOSYALARI ---
 function playNotificationSound() {
     try {
-        notificationSound.currentTime = 0;
-        notificationSound.play().catch(e => console.log('Otomatik ses çalma tarayıcı tarafından engellendi.', e));
-    } catch(err) {
-        console.error(err);
-    }
+        if(notificationSound) {
+            notificationSound.currentTime = 0;
+            notificationSound.play().catch(e => console.log(e));
+        }
+    } catch(err) {}
 }
 
 function playWaiterSound() {
     try {
-        waiterSound.loop = true; // Kapatılana kadar çalsın
-        waiterSound.currentTime = 0;
-        waiterSound.play().catch(e => console.log('Otomatik ses çalma engellendi.', e));
-    } catch(err) {
-        console.error(err);
-    }
+        if(waiterSound) {
+            waiterSound.loop = true;
+            waiterSound.currentTime = 0;
+            waiterSound.play().catch(e => console.log(e));
+        }
+    } catch(err) {}
 }
 
 function stopWaiterSound() {
     try {
-        waiterSound.pause();
-        waiterSound.currentTime = 0;
-    } catch(err) {
-        console.error(err);
-    }
+        if(waiterSound) {
+            waiterSound.pause();
+            waiterSound.currentTime = 0;
+        }
+    } catch(err) {}
 }
 
 // --- GARSON ÇAĞRILARI ---
-
 async function fetchWaiterCalls() {
+    if (!currentWorkspaceId) return;
+
     const { data: calls, error } = await supabase
         .from('waiter_calls')
         .select('*')
+        .eq('workspace_id', currentWorkspaceId)
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
@@ -395,14 +343,14 @@ function renderWaiterCalls(calls) {
     
     let html = '';
     calls.forEach(call => {
-        const safeTable = escapeHTML(call.table_no);
+        const safeTable = escapeHTML(call.table_number);
         html += `
-            <div class="waiter-toast" style="background: var(--surface); border-left: 4px solid var(--primary); padding: 15px; border-radius: 8px; box-shadow: var(--shadow-md); display: flex; align-items: center; justify-content: space-between; gap: 20px; animation: slideIn 0.3s ease-out;">
+            <div class="waiter-toast" style="background: var(--surface); border-left: 4px solid var(--primary); padding: 15px; border-radius: 8px; box-shadow: var(--shadow-md); display: flex; align-items: center; justify-content: space-between; gap: 20px; animation: slideIn 0.3s ease-out; margin-bottom: 10px;">
                 <div>
                     <strong style="color: var(--primary); display: block; font-size: 1.1rem;"><i class="fa-solid fa-bell-concierge"></i> Garson Çağrısı</strong>
                     <span style="font-size: 1.2rem; font-weight: bold;">${safeTable}</span>
                 </div>
-                <button onclick="resolveWaiterCall(${call.id})" class="btn btn-primary btn-sm" style="padding: 8px 15px; border-radius: 5px;">Tamamlandı</button>
+                <button onclick="resolveWaiterCall('${call.id}')" class="btn btn-primary btn-sm" style="padding: 8px 15px; border-radius: 5px;">Tamamlandı</button>
             </div>
         `;
     });
@@ -415,90 +363,12 @@ window.resolveWaiterCall = async (callId) => {
     const { error } = await supabase
         .from('waiter_calls')
         .update({ status: 'resolved' })
-        .eq('id', callId);
+        .eq('id', callId)
+        .eq('workspace_id', currentWorkspaceId);
 
     if (error) {
         alert('Hata oluştu!');
-    }
-};
-
-// --- MASA YÖNETİMİ ---
-
-async function fetchTables() {
-    const { data: tables, error } = await supabase
-        .from('quick_tables')
-        .select('*')
-        .order('table_number', { ascending: true });
-
-    if (error) {
-        console.error('Masalar çekilirken hata oluştu:', error);
-        return;
-    }
-
-    renderTables(tables);
-}
-
-function renderTables(tables) {
-    let html = '';
-    
-    tables.forEach(table => {
-        let statusText = 'Boş';
-        let statusClass = 'status-available';
-        
-        if (table.status === 'occupied') {
-            statusText = 'Dolu';
-            statusClass = 'status-occupied';
-        } else if (table.status === 'reserved') {
-            statusText = 'Rezerve';
-            statusClass = 'status-reserved';
-        }
-
-        html += `
-            <div class="table-control-card ${statusClass}" id="table-card-${table.table_number}">
-                <h3>Masa ${table.table_number}</h3>
-                <div class="status-badge" id="table-badge-${table.table_number}">${statusText}</div>
-                <div class="table-actions">
-                    <button onclick="updateTableStatus(${table.table_number}, 'available')" class="btn btn-success btn-sm">Boş Yap</button>
-                    <button onclick="updateTableStatus(${table.table_number}, 'occupied')" class="btn btn-danger btn-sm">Dolu Yap</button>
-                    <button onclick="updateTableStatus(${table.table_number}, 'reserved')" class="btn btn-warning btn-sm">Rezerve Et</button>
-                </div>
-            </div>
-        `;
-    });
-
-    tablesContainer.innerHTML = html;
-}
-
-window.updateTableStatus = async (tableNumber, newStatus) => {
-    // 1. İyimser UI Güncellemesi (Kullanıcı anında değişikliği görür)
-    const card = document.getElementById(`table-card-${tableNumber}`);
-    const badge = document.getElementById(`table-badge-${tableNumber}`);
-    
-    if (card && badge) {
-        card.classList.remove('status-available', 'status-occupied', 'status-reserved');
-        
-        if (newStatus === 'available') {
-            card.classList.add('status-available');
-            badge.innerText = 'Boş';
-        } else if (newStatus === 'occupied') {
-            card.classList.add('status-occupied');
-            badge.innerText = 'Dolu';
-        } else if (newStatus === 'reserved') {
-            card.classList.add('status-reserved');
-            badge.innerText = 'Rezerve';
-        }
-    }
-
-    // 2. Veritabanını Güncelle
-    const { error } = await supabase
-        .from('quick_tables')
-        .update({ status: newStatus })
-        .eq('table_number', tableNumber);
-
-    if (error) {
-        alert('Masa durumu güncellenirken hata oluştu!');
-        console.error(error);
-        // Hata olursa eski haline getirmek için verileri tekrar çek
-        fetchTables();
+    } else {
+        fetchWaiterCalls();
     }
 };

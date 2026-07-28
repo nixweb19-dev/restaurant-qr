@@ -26,89 +26,106 @@
 
     <div class="admin-layout">
         <aside class="sidebar">
-            <div class="brand">
-                <h2>LSEMD Admin</h2>
+            <div class="sidebar-header">
+                <div class="logo">LSEMD SaaS</div>
             </div>
             <nav class="sidebar-nav">
-                <a href="#" class="active" id="tab-orders"><i class="fa-solid fa-bell-concierge"></i> Siparişler</a>
-                <a href="#" id="tab-tables"><i class="fa-solid fa-chair"></i> Masa Kontrolü</a>
-                <a href="#" id="tab-history"><i class="fa-solid fa-clock-rotate-left"></i> Sipariş Geçmişi</a>
-                <a href="/"><i class="fa-solid fa-store"></i> Menüyü Görüntüle</a>
+                <a href="#" class="nav-item active" data-tab="ordersTab">
+                    <i class="fa-solid fa-list-check"></i> Siparişler
+                </a>
+                <a href="#" class="nav-item" data-tab="menuTab">
+                    <i class="fa-solid fa-utensils"></i> Menü Yönetimi
+                </a>
+                <a href="#" class="nav-item" data-tab="qrTab">
+                    <i class="fa-solid fa-qrcode"></i> Karekod (QR)
+                </a>
+                <a href="#" class="nav-item" data-tab="settingsTab">
+                    <i class="fa-solid fa-gear"></i> Ayarlar
+                </a>
+                <a href="#" class="nav-item" id="logoutBtn" style="margin-top: auto; color: #ef4444;">
+                    <i class="fa-solid fa-right-from-bracket"></i> Çıkış Yap
+                </a>
             </nav>
         </aside>
 
         <main class="admin-main">
-            <header class="admin-header">
-                <div class="header-title">
-                    <h1 id="page-title">Canlı Sipariş Takibi</h1>
-                    <div class="status-indicator">
-                        <span class="pulse-dot"></span> Veritabanına Bağlı
+            <!-- SİPARİŞLER SEKMESİ -->
+            <section id="ordersTab" class="tab-content active">
+                <header class="admin-header">
+                    <div class="header-title">
+                        <h1 id="page-title">Canlı Sipariş Takibi</h1>
+                        <div class="status-indicator">
+                            <span class="pulse-dot"></span> Veritabanına Bağlı
+                        </div>
                     </div>
-                </div>
-            </header>
+                </header>
 
-            <div class="orders-board" id="view-orders">
-                <!-- Bekleyen Siparişler -->
-                <div class="order-column">
-                    <div class="column-header warning">
-                        <h3><i class="fa-solid fa-clock"></i> Bekleyenler</h3>
-                        <span class="count" id="pendingCount">0</span>
+                <div class="orders-board" id="view-orders">
+                    <!-- Bekleyen Siparişler -->
+                    <div class="order-column">
+                        <div class="column-header warning">
+                            <h3><i class="fa-solid fa-clock"></i> Bekleyenler</h3>
+                            <span class="count" id="pendingCount">0</span>
+                        </div>
+                        <div class="column-content" id="pendingOrders">
+                            <!-- Bekleyen sipariş kartları buraya -->
+                        </div>
                     </div>
-                    <div class="column-content" id="pendingOrders">
-                        <!-- Bekleyen sipariş kartları buraya -->
-                    </div>
-                </div>
 
-                <!-- Hazırlanan Siparişler -->
-                <div class="order-column">
-                    <div class="column-header info">
-                        <h3><i class="fa-solid fa-fire-burner"></i> Hazırlanıyor</h3>
-                        <span class="count" id="preparingCount">0</span>
+                    <!-- Hazırlanan Siparişler -->
+                    <div class="order-column">
+                        <div class="column-header info">
+                            <h3><i class="fa-solid fa-fire-burner"></i> Hazırlanıyor</h3>
+                            <span class="count" id="preparingCount">0</span>
+                        </div>
+                        <div class="column-content" id="preparingOrders">
+                            <!-- Hazırlanan sipariş kartları buraya -->
+                        </div>
                     </div>
-                    <div class="column-content" id="preparingOrders">
-                        <!-- Hazırlanan sipariş kartları buraya -->
-                    </div>
-                </div>
 
-                <!-- Teslim Edilen Siparişler -->
-                <div class="order-column">
-                    <div class="column-header success">
-                        <h3><i class="fa-solid fa-check-double"></i> Tamamlananlar</h3>
-                        <span class="count" id="completedCount">0</span>
+                    <!-- Teslim Edilen Siparişler -->
+                    <div class="order-column">
+                        <div class="column-header success">
+                            <h3><i class="fa-solid fa-check-double"></i> Tamamlananlar</h3>
+                            <span class="count" id="completedCount">0</span>
+                        </div>
+                        <div class="column-content" id="completedOrders">
+                            <!-- Tamamlanan sipariş kartları buraya -->
+                        </div>
                     </div>
-                    <div class="column-content" id="completedOrders">
-                        <!-- Tamamlanan sipariş kartları buraya -->
-                    </div>
                 </div>
-            </div>
+            </section> <!-- End Siparişler Tab -->
 
-            <!-- Masa Kontrolü Görünümü -->
-            <div class="tables-board hidden" id="view-tables">
-                <div class="tables-grid" id="tablesContainer">
-                    <!-- Masa kartları JS ile buraya gelecek -->
+            <!-- MENÜ YÖNETİMİ SEKMESİ (Hazırlanıyor) -->
+            <section id="menuTab" class="tab-content" style="display: none;">
+                <header class="top-header">
+                    <h2>Menü Yönetimi</h2>
+                </header>
+                <div class="dashboard-stats" style="margin-top: 2rem;">
+                    <p>Menü düzenleme özellikleri buraya gelecek...</p>
                 </div>
-            </div>
+            </section>
+            
+            <!-- QR KAREKOD SEKMESİ (Hazırlanıyor) -->
+            <section id="qrTab" class="tab-content" style="display: none;">
+                <header class="top-header">
+                    <h2>Karekod (QR) Çıktıları</h2>
+                </header>
+                <div class="dashboard-stats" style="margin-top: 2rem;">
+                    <p>Masa bazlı QR kod oluşturucu buraya gelecek...</p>
+                </div>
+            </section>
+            
+            <!-- AYARLAR SEKMESİ (Hazırlanıyor) -->
+            <section id="settingsTab" class="tab-content" style="display: none;">
+                <header class="top-header">
+                    <h2>İşletme Ayarları</h2>
+                </header>
+                <div class="dashboard-stats" style="margin-top: 2rem;">
+                    <p>Restoran tema ve genel ayarları buraya gelecek...</p>
+                </div>
+            </section>
 
-            <!-- Sipariş Geçmişi Görünümü -->
-            <div class="history-board hidden" id="view-history">
-                <div class="history-container">
-                    <table class="history-table">
-                        <thead>
-                            <tr>
-                                <th>Tarih & Saat</th>
-                                <th>Masa</th>
-                                <th>Sipariş Detayı</th>
-                                <th>Notlar</th>
-                                <th>Tutar</th>
-                                <th>Durum</th>
-                            </tr>
-                        </thead>
-                        <tbody id="historyTableBody">
-                            <!-- Geçmiş siparişler JS ile buraya gelecek -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
         </main>
     </div>
 
@@ -132,5 +149,21 @@
 
     <!-- Scripts -->
     <script type="module" src="./js/admin.js"></script>
+    <script>
+        // Basit Tab Geçiş Mantığı
+        document.querySelectorAll('.nav-item[data-tab]').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                e.preventDefault();
+                // Buton aktiflik durumu
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // İçerik gösterme/gizleme
+                document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+                const targetId = tab.getAttribute('data-tab');
+                document.getElementById(targetId).style.display = 'block';
+            });
+        });
+    </script>
 </body>
 </html>

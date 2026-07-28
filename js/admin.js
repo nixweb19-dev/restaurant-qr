@@ -250,6 +250,16 @@ function createOrderCard(order) {
 
 // Sipariş Durumunu Güncelle
 window.updateOrderStatus = async (orderId, newStatus) => {
+    // 1. Anında görsel geri bildirim (Hız hissi için)
+    const card = document.getElementById(`order-${orderId}`);
+    if (card) {
+        card.style.opacity = '0.6';
+        card.style.pointerEvents = 'none';
+        const btn = card.querySelector('.btn-warning, .btn-success');
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> İletiliyor...';
+    }
+
+    // 2. Arka planda Supabase'e gönder
     const { error } = await supabase
         .from('orders')
         .update({ status: newStatus })
@@ -258,6 +268,11 @@ window.updateOrderStatus = async (orderId, newStatus) => {
     if (error) {
         alert('Durum güncellenirken hata oluştu!');
         console.error(error);
+        if (card) {
+            card.style.opacity = '1';
+            card.style.pointerEvents = 'auto';
+            fetchOrders(); // Hata varsa listeyi sıfırla
+        }
     }
 };
 

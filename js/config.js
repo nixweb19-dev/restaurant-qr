@@ -12,6 +12,7 @@ export const CONFIG = {
     // 2. İŞLETME BİLGİLERİ
     RESTAURANT_NAME: "NOVA Cafe & Bistro",
     RESTAURANT_SLUG: "nova-cafe", // QR Çıktıları ve URL için kısa isim (Boşluksuz, Türkçe karaktersiz)
+    TABLE_COUNT: 50, // Restorandaki masa sayısı (Seçenekleri otomatik oluşturur)
     PHONE_NUMBER: "0555 555 55 55",
     WHATSAPP_NUMBER: "905555555555",
     ADDRESS: "Kadıköy, İstanbul",

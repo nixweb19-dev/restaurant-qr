@@ -268,16 +268,10 @@ async function fetchAndBuildMenu() {
 }
 
 async function fetchTables() {
-    const { data: tables, error } = await supabase
-        .from('tables')
-        .select('table_number, status')
-        .order('table_number', { ascending: true });
-
-    if (error) {
-        console.error('Masalar çekilirken hata oluştu:', error);
-        return;
-    }
-
+    // Master Template modelinde masalar veritabanından değil, config'den otomatik üretilir.
+    // Bu sayede kurulum çok daha hızlı olur ve hata payı sıfıra iner.
+    const tableCount = CONFIG.TABLE_COUNT || 50;
+    
     // Mevcut seçimi kaydet
     const currentSelection = tableSelector.value;
     
@@ -285,38 +279,31 @@ async function fetchTables() {
     tableSelector.innerHTML = '<option value="" disabled selected>Lütfen Masanızı Seçiniz</option>';
     
     let isCurrentSelectionAvailable = false;
-
     let gridHtml = '';
 
-    tables.forEach(table => {
-        const option = document.createElement('option');
-        option.value = table.table_number;
+    for (let i = 1; i <= tableCount; i++) {
+        const tableNum = i.toString();
         
-        if (table.status === 'available') {
-            option.textContent = `Masa ${table.table_number}`;
-            if (currentSelection == table.table_number) {
-                isCurrentSelectionAvailable = true;
-            }
-            // Grid için buton (sadece müsait masalar)
-            gridHtml += `<button class="table-grid-btn" onclick="selectTableForWaiter('${table.table_number}')"><i class="fa-solid fa-chair"></i> Masa ${table.table_number}</button>`;
-        } else if (table.status === 'occupied') {
-            option.textContent = `Masa ${table.table_number} (Dolu)`;
-            option.disabled = true;
-            gridHtml += `<button class="table-grid-btn disabled" disabled><i class="fa-solid fa-users"></i> Masa ${table.table_number}</button>`;
-        } else if (table.status === 'reserved') {
-            option.textContent = `Masa ${table.table_number} (Rezerve)`;
-            option.disabled = true;
-            gridHtml += `<button class="table-grid-btn disabled" disabled><i class="fa-solid fa-calendar-check"></i> Masa ${table.table_number}</button>`;
+        // Select için option oluştur
+        const option = document.createElement('option');
+        option.value = tableNum;
+        option.textContent = `Masa ${tableNum}`;
+        
+        if (currentSelection == tableNum) {
+            isCurrentSelectionAvailable = true;
         }
         
         tableSelector.appendChild(option);
-    });
+        
+        // Grid için buton oluştur
+        gridHtml += `<button class="table-grid-btn" onclick="selectTableForWaiter('${tableNum}')"><i class="fa-solid fa-chair"></i> Masa ${tableNum}</button>`;
+    }
 
     if (tableSelectGrid) {
         tableSelectGrid.innerHTML = gridHtml;
     }
 
-    // Eğer önceki seçilen masa hala müsaitse seçili bırak
+    // Eğer önceki seçilen masa varsa seçili bırak
     if (isCurrentSelectionAvailable) {
         tableSelector.value = currentSelection;
     } else {

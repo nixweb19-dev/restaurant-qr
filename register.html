@@ -236,7 +236,7 @@
                 
                 if (workspaceError) {
                     console.error(workspaceError);
-                    errorMsg.innerHTML = "İşletme profili oluşturulamadı. Lütfen Supabase'de SQL kurulumunu yaptığınızdan emin olun.";
+                    errorMsg.innerHTML = "SQL Hatası: " + workspaceError.message + "<br><br>(Lütfen bu mesajı bana kopyalayın)";
                     errorMsg.style.display = 'block';
                     registerBtn.innerHTML = 'Kayıt Ol ve Başla <i class="fa-solid fa-rocket"></i>';
                     registerBtn.disabled = false;

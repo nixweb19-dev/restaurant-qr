@@ -480,6 +480,8 @@ window.resolveWaiterCall = async (callId) => {
     if (error) {
         alert('Hata oluştu!');
         fetchWaiterCalls(); // Hata varsa listeyi sıfırla
+    } else {
+        fetchWaiterCalls(); // BAŞARILI! Anında güncel veriyi çek
     }
 };
 
@@ -583,5 +585,7 @@ window.updateTableStatus = async (tableId, newStatus) => {
         alert('Masa durumu güncellenirken hata oluştu!');
         console.error(error);
         fetchTables(); // Hata varsa geri çek
+    } else {
+        fetchTables(); // BAŞARILI! Anında ekranı yenile
     }
 };

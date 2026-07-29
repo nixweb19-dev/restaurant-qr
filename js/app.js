@@ -165,6 +165,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     const heroSub = document.querySelector('.hero-content p');
     if(heroTitle) heroTitle.innerText = CONFIG.HERO_TITLE;
     if(heroSub) heroSub.innerText = CONFIG.HERO_SUBTITLE;
+    
+    // Footer Linkleri
+    const instagramLink = document.getElementById('instagramLink');
+    if (instagramLink) {
+        if (CONFIG.INSTAGRAM_URL) {
+            instagramLink.href = CONFIG.INSTAGRAM_URL;
+        } else {
+            instagramLink.style.display = 'none';
+        }
+    }
 
     // Özellik bayraklarını uygula
     if (!CONFIG.ENABLE_WAITER_CALL && callWaiterBtn) {

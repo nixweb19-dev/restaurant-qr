@@ -16,6 +16,7 @@ export const CONFIG = {
     PHONE_NUMBER: "0555 555 55 55",
     WHATSAPP_NUMBER: "905555555555",
     ADDRESS: "Kadıköy, İstanbul",
+    INSTAGRAM_URL: "https://instagram.com/nixweb", // İşletmenin Instagram adresi
 
     // 3. ADMIN PANELİ ŞİFRESİ
     ADMIN_PASSWORD: "123", // admin.html sayfasına girişte sorulacak şifre

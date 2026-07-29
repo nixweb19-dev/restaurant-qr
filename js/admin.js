@@ -338,6 +338,8 @@ window.updateOrderStatus = async (orderId, newStatus) => {
             card.style.pointerEvents = 'auto';
             fetchOrders(); // Hata varsa listeyi sıfırla
         }
+    } else {
+        fetchOrders(); // BAŞARILI! Anında güncel veriyi çek ve ekrana yansıt (Hız için)
     }
 };
 
@@ -388,6 +390,8 @@ window.deleteOrder = async (orderId) => {
             alert('Arşivlenirken hata oluştu!');
             console.error(error);
             fetchOrders(); // Hata varsa geri getir
+        } else {
+            fetchOrders();
         }
     }
 };

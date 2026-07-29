@@ -275,9 +275,20 @@ async function fetchAndBuildMenu() {
 }
 
 async function fetchTables() {
-    // Master Template modelinde masalar veritabanından değil, config'den otomatik üretilir.
-    // Bu sayede kurulum çok daha hızlı olur ve hata payı sıfıra iner.
-    const tableCount = CONFIG.TABLE_COUNT || 50;
+    const { data: tables, error } = await supabase
+        .from('tables')
+        .select('*')
+        .order('table_number', { ascending: true });
+
+    if (error) {
+        console.error('Masalar çekilirken hata:', error);
+        return;
+    }
+    
+    if (!tables) return;
+    
+    // Sayısal olarak sırala
+    tables.sort((a, b) => parseInt(a.table_number) - parseInt(b.table_number));
     
     // Mevcut seçimi kaydet
     const currentSelection = tableSelector.value;
@@ -288,29 +299,44 @@ async function fetchTables() {
     let isCurrentSelectionAvailable = false;
     let gridHtml = '';
 
-    for (let i = 1; i <= tableCount; i++) {
-        const tableNum = i.toString();
+    tables.forEach(table => {
+        const isOccupied = table.status === 'occupied' || table.status === 'reserved';
+        const tableNum = String(table.table_number);
         
         // Select için option oluştur
         const option = document.createElement('option');
         option.value = tableNum;
-        option.textContent = `Masa ${tableNum}`;
         
-        if (currentSelection == tableNum) {
-            isCurrentSelectionAvailable = true;
+        let statusText = '';
+        if (table.status === 'occupied') statusText = ' (Dolu)';
+        if (table.status === 'reserved') statusText = ' (Rezerve)';
+        
+        option.textContent = `Masa ${tableNum}${statusText}`;
+        
+        if (isOccupied) {
+            option.disabled = true;
+            option.style.color = '#ef4444';
+        } else {
+            if (currentSelection == tableNum) {
+                isCurrentSelectionAvailable = true;
+            }
         }
         
         tableSelector.appendChild(option);
         
-        // Grid için buton oluştur
-        gridHtml += `<button class="table-grid-btn" onclick="selectTableForWaiter('${tableNum}')"><i class="fa-solid fa-chair"></i> Masa ${tableNum}</button>`;
-    }
+        // Garson Çağırma Grid'i için buton oluştur
+        if (isOccupied) {
+            gridHtml += `<button class="table-grid-btn" disabled style="opacity: 0.5; background: var(--border); color: #888; cursor: not-allowed;"><i class="fa-solid fa-chair"></i> Masa ${tableNum}${statusText}</button>`;
+        } else {
+            gridHtml += `<button class="table-grid-btn" onclick="selectTableForWaiter('${tableNum}')"><i class="fa-solid fa-chair"></i> Masa ${tableNum}</button>`;
+        }
+    });
 
     if (tableSelectGrid) {
         tableSelectGrid.innerHTML = gridHtml;
     }
 
-    // Eğer önceki seçilen masa varsa seçili bırak
+    // Eğer önceki seçilen masa hala müsaitse seçili bırak
     if (isCurrentSelectionAvailable) {
         tableSelector.value = currentSelection;
     } else {

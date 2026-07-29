@@ -485,13 +485,35 @@ window.resolveWaiterCall = async (callId) => {
 async function fetchTables() {
     const { data: tables, error } = await supabase
         .from('tables')
-        .select('*')
-        .order('table_number', { ascending: true });
+        .select('*'); // Order by'ı JS tarafında sayısal yapacağız
 
     if (error) {
         console.error('Masalar çekilirken hata oluştu:', error);
         return;
     }
+
+    // Eğer masa yoksa otomatik oluştur
+    if (!tables || tables.length === 0) {
+        const count = CONFIG.TABLE_COUNT || 10;
+        const insertData = [];
+        for (let i = 1; i <= count; i++) {
+            insertData.push({ table_number: String(i), status: 'available' });
+        }
+        
+        const { error: insertErr } = await supabase.from('tables').insert(insertData);
+        if (!insertErr) {
+            // Yeniden çek
+            const { data: newTables } = await supabase.from('tables').select('*');
+            if (newTables) {
+                newTables.sort((a, b) => parseInt(a.table_number) - parseInt(b.table_number));
+                renderTables(newTables);
+            }
+        }
+        return;
+    }
+
+    // Sayısal olarak sırala (Masa 1, Masa 2, Masa 10)
+    tables.sort((a, b) => parseInt(a.table_number) - parseInt(b.table_number));
 
     renderTables(tables);
 }
@@ -503,7 +525,7 @@ function renderTables(tables) {
     let html = '';
     
     if (!tables || tables.length === 0) {
-        html = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">Henüz masa bulunmuyor. Lütfen masaları oluşturun.</div>';
+        html = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 2rem;">Masalar oluşturuluyor...</div>';
     } else {
         tables.forEach(table => {
             let cardClass = 'table-card free';

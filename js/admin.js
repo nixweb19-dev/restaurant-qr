@@ -506,21 +506,32 @@ function renderTables(tables) {
         html = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">Henüz masa bulunmuyor. Lütfen masaları oluşturun.</div>';
     } else {
         tables.forEach(table => {
-            const isOccupied = table.status === 'occupied';
-            const cardClass = isOccupied ? 'table-card occupied' : 'table-card free';
-            const statusIcon = isOccupied ? '<i class="fa-solid fa-users"></i>' : '<i class="fa-solid fa-chair"></i>';
-            const statusText = isOccupied ? 'Dolu' : 'Boş';
+            let cardClass = 'table-card free';
+            let statusIcon = '<i class="fa-solid fa-chair"></i>';
+            let borderColor = '#4CAF50';
+            
+            if (table.status === 'occupied') {
+                cardClass = 'table-card occupied';
+                statusIcon = '<i class="fa-solid fa-users"></i>';
+                borderColor = '#f44336';
+            } else if (table.status === 'reserved') {
+                cardClass = 'table-card reserved';
+                statusIcon = '<i class="fa-solid fa-clock"></i>';
+                borderColor = '#ff9800'; // Turuncu
+            }
             
             html += `
-                <div class="${cardClass}" style="background: var(--surface); border: 2px solid ${isOccupied ? '#f44336' : '#4CAF50'}; border-radius: var(--radius-md); padding: 1.5rem; text-align: center; position: relative; transition: all 0.3s ease;">
-                    <div class="table-icon" style="font-size: 2.5rem; color: ${isOccupied ? '#f44336' : '#4CAF50'}; margin-bottom: 10px;">
+                <div id="table-card-${table.id}" class="${cardClass}" style="background: var(--surface); border: 2px solid ${borderColor}; border-radius: var(--radius-md); padding: 1.5rem; text-align: center; position: relative; transition: all 0.3s ease;">
+                    <div class="table-icon" style="font-size: 2.5rem; color: ${borderColor}; margin-bottom: 10px;">
                         ${statusIcon}
                     </div>
-                    <h3 style="margin-bottom: 5px; font-size: 1.5rem;">Masa ${table.table_number}</h3>
-                    <div class="table-status" style="font-weight: 600; color: ${isOccupied ? '#f44336' : '#4CAF50'}; margin-bottom: 15px;">
-                        ${statusText}
-                    </div>
-                    ${isOccupied ? `<button onclick="resetTable('${table.id}')" class="btn btn-outline" style="width: 100%; border: 1px solid #f44336; color: #f44336; padding: 0.5rem; border-radius: var(--radius-md); font-weight: 600; background: transparent;">Masayı Boşalt</button>` : `<div style="height: 36px;"></div>`}
+                    <h3 style="margin-bottom: 15px; font-size: 1.5rem;">Masa ${table.table_number}</h3>
+                    
+                    <select onchange="updateTableStatus('${table.id}', this.value)" style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--background); color: var(--text); font-weight: 600; outline: none; cursor: pointer; text-align: center;">
+                        <option value="available" ${table.status === 'available' ? 'selected' : ''}>Boş</option>
+                        <option value="occupied" ${table.status === 'occupied' ? 'selected' : ''}>Dolu</option>
+                        <option value="reserved" ${table.status === 'reserved' ? 'selected' : ''}>Rezerve</option>
+                    </select>
                 </div>
             `;
         });
@@ -529,20 +540,22 @@ function renderTables(tables) {
     tablesContainer.innerHTML = html;
 }
 
-window.resetTable = async (tableId) => {
-    const isConfirmed = await showCustomConfirm('Masayı boş olarak işaretlemek istediğinize emin misiniz?');
-    
-    if (isConfirmed) {
-        const { error } = await supabase
-            .from('tables')
-            .update({ status: 'available' })
-            .eq('id', tableId);
+window.updateTableStatus = async (tableId, newStatus) => {
+    // Optimistic UI (Hız hissi için anında soluklaştır)
+    const el = document.getElementById(`table-card-${tableId}`);
+    if (el) {
+        el.style.opacity = '0.5';
+        el.style.pointerEvents = 'none';
+    }
 
-        if (error) {
-            alert('Masa güncellenirken hata oluştu!');
-            console.error(error);
-        } else {
-            fetchTables();
-        }
+    const { error } = await supabase
+        .from('tables')
+        .update({ status: newStatus })
+        .eq('id', tableId);
+
+    if (error) {
+        alert('Masa durumu güncellenirken hata oluştu!');
+        console.error(error);
+        fetchTables(); // Hata varsa geri çek
     }
 };

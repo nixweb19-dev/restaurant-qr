@@ -88,6 +88,7 @@ async function continueAdminInit() {
     // 4. Mevcut Verileri Çek ve Dinle
     await fetchOrders();
     await fetchWaiterCalls();
+    await fetchTables();
     setupRealtimeSubscription();
 }
 
@@ -137,6 +138,18 @@ function setupRealtimeSubscription() {
             fetchWaiterCalls();
         })
         .subscribe();
+        
+    // Masalar İçin
+    supabase
+        .channel('public:tables')
+        .on('postgres_changes', { 
+            event: '*', 
+            schema: 'public', 
+            table: 'tables'
+        }, payload => {
+            fetchTables();
+        })
+        .subscribe();
 }
 
 // Siparişleri Ekrana Çiz
@@ -169,6 +182,58 @@ function renderOrders(orders) {
     pendingCount.innerText = counts.pending;
     preparingCount.innerText = counts.preparing;
     completedCount.innerText = counts.completed;
+    
+    // Sipariş Geçmişi Tablosunu Güncelle
+    renderHistory(orders);
+}
+
+function renderHistory(orders) {
+    const historyTableBody = document.getElementById('historyTableBody');
+    if (!historyTableBody) return;
+    
+    let html = '';
+    
+    if (!orders || orders.length === 0) {
+        historyTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Henüz sipariş bulunmuyor.</td></tr>';
+        return;
+    }
+
+    orders.forEach(order => {
+        const dateTime = new Date(order.created_at).toLocaleString('tr-TR', { 
+            day: '2-digit', month: '2-digit', year: 'numeric', 
+            hour: '2-digit', minute: '2-digit' 
+        });
+        
+        let itemsText = '';
+        if (order.items && Array.isArray(order.items)) {
+            itemsText = escapeHTML(order.items.map(item => `${item.quantity}x ${item.name}`).join(', '));
+        }
+        
+        let statusBadge = '';
+        if (order.status === 'archived') {
+            statusBadge = '<span class="history-status-badge archived" style="background:#e0e0e0; padding:4px 8px; border-radius:4px; font-size:0.8rem; font-weight:600; color:#555;">Arşivlendi</span>';
+        } else if (order.status === 'completed') {
+            statusBadge = '<span class="history-status-badge completed" style="background:#d4edda; padding:4px 8px; border-radius:4px; font-size:0.8rem; font-weight:600; color:#155724;">Tamamlandı</span>';
+        } else if (order.status === 'preparing') {
+            statusBadge = '<span class="history-status-badge preparing" style="background:#cce5ff; padding:4px 8px; border-radius:4px; font-size:0.8rem; font-weight:600; color:#004085;">Hazırlanıyor</span>';
+        } else {
+            statusBadge = '<span class="history-status-badge pending" style="background:#fff3cd; padding:4px 8px; border-radius:4px; font-size:0.8rem; font-weight:600; color:#856404;">Bekliyor</span>';
+        }
+
+        const safeTable = escapeHTML(order.table_number);
+
+        html += `
+            <tr style="border-bottom: 1px solid var(--border); transition: background 0.2s;">
+                <td style="padding: 1rem;">${dateTime}</td>
+                <td style="font-weight:600; padding: 1rem;">${safeTable || '-'}</td>
+                <td style="padding: 1rem; max-width: 300px;">${itemsText}</td>
+                <td style="font-weight:600; color:var(--primary); padding: 1rem;">${order.total_price} TL</td>
+                <td style="padding: 1rem;">${statusBadge}</td>
+            </tr>
+        `;
+    });
+
+    historyTableBody.innerHTML = html;
 }
 
 // XSS (Zararlı Kod) Koruması için Yardımcı Fonksiyon
@@ -414,56 +479,70 @@ window.resolveWaiterCall = async (callId) => {
     }
 };
 
-// Menü Yönetimi İptal Edildi - config.js'den yönetilecek
-
 // ==========================================
-// KAREKOD (QR) ÜRETİMİ
+// MASA KONTROLÜ
 // ==========================================
-const generateQrBtn = document.getElementById('generateQrBtn');
-const tableCountInput = document.getElementById('tableCountInput');
-const qrGridContainer = document.getElementById('qrGridContainer');
-const printQrBtn = document.getElementById('printQrBtn');
+async function fetchTables() {
+    const { data: tables, error } = await supabase
+        .from('tables')
+        .select('*')
+        .order('table_number', { ascending: true });
 
-if (generateQrBtn) {
-    generateQrBtn.addEventListener('click', () => {
-        const count = parseInt(tableCountInput.value);
-        if (isNaN(count) || count < 1 || count > 200) {
-            alert("Lütfen 1 ile 200 arasında geçerli bir masa sayısı girin.");
-            return;
-        }
+    if (error) {
+        console.error('Masalar çekilirken hata oluştu:', error);
+        return;
+    }
 
-        generateQrBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Üretiliyor...';
-        generateQrBtn.disabled = true;
-
-        setTimeout(() => {
-            let html = '';
-            const baseUrl = window.location.origin; // e.g. https://restaurant-qr-yeni.vercel.app
-            const restaurantSlug = CONFIG.RESTAURANT_SLUG;
-            const restaurantName = CONFIG.RESTAURANT_NAME;
-
-            for (let i = 1; i <= count; i++) {
-                // Müşteri ekranı için URL (Artık sadece ?m=X parametresi eklendi)
-                const targetUrl = `${baseUrl}/?m=${i}`;
-                const encodedUrl = encodeURIComponent(targetUrl);
-                
-                // QR Server API
-                const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodedUrl}`;
-
-                html += `
-                    <div class="qr-card">
-                        <h3>${restaurantName}</h3>
-                        <img src="${qrImageUrl}" alt="Masa ${i} QR" loading="lazy">
-                        <p>Masa ${i}</p>
-                    </div>
-                `;
-            }
-
-            qrGridContainer.innerHTML = html;
-            qrGridContainer.classList.remove('hidden');
-            printQrBtn.classList.remove('hidden');
-
-            generateQrBtn.innerHTML = '<i class="fa-solid fa-qrcode"></i> Karekodları Üret';
-            generateQrBtn.disabled = false;
-        }, 500); // UI thread için ufak bir bekleme
-    });
+    renderTables(tables);
 }
+
+function renderTables(tables) {
+    const tablesContainer = document.getElementById('tablesContainer');
+    if (!tablesContainer) return;
+
+    let html = '';
+    
+    if (!tables || tables.length === 0) {
+        html = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">Henüz masa bulunmuyor. Lütfen masaları oluşturun.</div>';
+    } else {
+        tables.forEach(table => {
+            const isOccupied = table.status === 'occupied';
+            const cardClass = isOccupied ? 'table-card occupied' : 'table-card free';
+            const statusIcon = isOccupied ? '<i class="fa-solid fa-users"></i>' : '<i class="fa-solid fa-chair"></i>';
+            const statusText = isOccupied ? 'Dolu' : 'Boş';
+            
+            html += `
+                <div class="${cardClass}" style="background: var(--surface); border: 2px solid ${isOccupied ? '#f44336' : '#4CAF50'}; border-radius: var(--radius-md); padding: 1.5rem; text-align: center; position: relative; transition: all 0.3s ease;">
+                    <div class="table-icon" style="font-size: 2.5rem; color: ${isOccupied ? '#f44336' : '#4CAF50'}; margin-bottom: 10px;">
+                        ${statusIcon}
+                    </div>
+                    <h3 style="margin-bottom: 5px; font-size: 1.5rem;">Masa ${table.table_number}</h3>
+                    <div class="table-status" style="font-weight: 600; color: ${isOccupied ? '#f44336' : '#4CAF50'}; margin-bottom: 15px;">
+                        ${statusText}
+                    </div>
+                    ${isOccupied ? `<button onclick="resetTable('${table.id}')" class="btn btn-outline" style="width: 100%; border: 1px solid #f44336; color: #f44336; padding: 0.5rem; border-radius: var(--radius-md); font-weight: 600; background: transparent;">Masayı Boşalt</button>` : `<div style="height: 36px;"></div>`}
+                </div>
+            `;
+        });
+    }
+
+    tablesContainer.innerHTML = html;
+}
+
+window.resetTable = async (tableId) => {
+    const isConfirmed = await showCustomConfirm('Masayı boş olarak işaretlemek istediğinize emin misiniz?');
+    
+    if (isConfirmed) {
+        const { error } = await supabase
+            .from('tables')
+            .update({ status: 'available' })
+            .eq('id', tableId);
+
+        if (error) {
+            alert('Masa güncellenirken hata oluştu!');
+            console.error(error);
+        } else {
+            fetchTables();
+        }
+    }
+};

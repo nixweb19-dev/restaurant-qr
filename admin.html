@@ -129,11 +129,11 @@
                 <a href="#" class="nav-item active" data-tab="ordersTab">
                     <i class="fa-solid fa-list-check"></i> Siparişler
                 </a>
-                <a href="#" class="nav-item" data-tab="qrTab">
-                    <i class="fa-solid fa-qrcode"></i> Karekod (QR)
+                <a href="#" class="nav-item" data-tab="tablesTab">
+                    <i class="fa-solid fa-chair"></i> Masa Kontrolü
                 </a>
-                <a href="#" class="nav-item" data-tab="settingsTab">
-                    <i class="fa-solid fa-gear"></i> Ayarlar
+                <a href="#" class="nav-item" data-tab="historyTab">
+                    <i class="fa-solid fa-clock-rotate-left"></i> Sipariş Geçmişi
                 </a>
                 <a href="#" class="nav-item" id="logoutBtn" style="margin-top: auto; color: #ef4444;">
                     <i class="fa-solid fa-right-from-bracket"></i> Çıkış Yap
@@ -191,41 +191,44 @@
             
             <!-- MENÜ YÖNETİMİ KALDIRILDI -->
             
-            <!-- QR KAREKOD SEKMESİ (Hazırlanıyor) -->
-            <section id="qrTab" class="tab-content" style="display: none;">
-                <header class="top-header" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <h2>Karekod (QR) Çıktıları</h2>
-                        <p style="color: var(--text-muted); margin-top: 0.5rem;">Masalarınıza yapıştırmak için karekodlarınızı oluşturun ve yazdırın.</p>
-                    </div>
-                    <button id="printQrBtn" class="btn btn-secondary hidden" onclick="window.print()" style="background-color: #10b981; color: white; border: none;">
-                        <i class="fa-solid fa-print"></i> A4'e Yazdır
-                    </button>
+            <!-- MASA KONTROLÜ SEKMESİ -->
+            <section id="tablesTab" class="tab-content" style="display: none;">
+                <header class="top-header" style="margin-bottom: 1.5rem;">
+                    <h2>Masa Kontrolü</h2>
+                    <p style="color: var(--text-muted); margin-top: 0.5rem;">Hangi masanın dolu veya boş olduğunu canlı takip edin.</p>
                 </header>
                 
-                <div class="qr-controls">
-                    <div style="flex: 1;">
-                        <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 600;">Masa Sayınız</label>
-                        <input type="number" id="tableCountInput" min="1" max="100" value="10" style="width: 100%; padding: 0.8rem; border: 1px solid var(--border); border-radius: var(--radius-md);">
+                <div class="tables-board">
+                    <div class="tables-grid" id="tablesContainer">
+                        <!-- Masa kartları JS ile buraya gelecek -->
                     </div>
-                    <button id="generateQrBtn" class="btn btn-primary" style="padding: 0.8rem 2rem;">
-                        <i class="fa-solid fa-qrcode"></i> Karekodları Üret
-                    </button>
-                </div>
-
-                <div id="qrPrintArea">
-                    <!-- Üretilen QR kodlar buraya dizilecek -->
-                    <div id="qrGridContainer" class="qr-grid hidden"></div>
                 </div>
             </section>
             
-            <!-- AYARLAR SEKMESİ (Hazırlanıyor) -->
-            <section id="settingsTab" class="tab-content" style="display: none;">
-                <header class="top-header">
-                    <h2>İşletme Ayarları</h2>
+            <!-- SİPARİŞ GEÇMİŞİ SEKMESİ -->
+            <section id="historyTab" class="tab-content" style="display: none;">
+                <header class="top-header" style="margin-bottom: 1.5rem;">
+                    <h2>Tüm Sipariş Geçmişi</h2>
+                    <p style="color: var(--text-muted); margin-top: 0.5rem;">Geçmişteki tüm arşivlenmiş ve tamamlanmış siparişlerin listesi.</p>
                 </header>
-                <div class="dashboard-stats" style="margin-top: 2rem;">
-                    <p>Restoran tema ve genel ayarları buraya gelecek...</p>
+                
+                <div class="history-board">
+                    <div class="history-container">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>Tarih & Saat</th>
+                                    <th>Masa</th>
+                                    <th>Sipariş İçeriği</th>
+                                    <th>Tutar</th>
+                                    <th>Durum</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody">
+                                <!-- Siparişler JS ile buraya eklenecek -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
